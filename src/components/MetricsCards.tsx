@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FolderOpen, Ticket, Clock, Users } from 'lucide-react';
+import { FolderOpen, Ticket, Clock } from 'lucide-react';
 
 export const MetricsCards = () => {
   const metrics = [
@@ -24,18 +24,11 @@ export const MetricsCards = () => {
       icon: Clock,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
-    },
-    {
-      title: 'Team Members',
-      value: '4',
-      icon: Users,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {metrics.map((metric, index) => (
         <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
