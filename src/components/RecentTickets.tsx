@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Search, Eye, Trash2 } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
 import { Button } from '@/components/ui/button';
@@ -18,12 +18,20 @@ interface Ticket {
   updated_at: string;
 }
 
-export const RecentTickets = () => {
-  const { tickets, isLoading, deleteTicket } = useTickets();
+export interface RecentTicketsRef {
+  refreshTickets: () => void;
+}
+
+export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
+  const { tickets, isLoading, deleteTicket, fetchTickets } = useTickets();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [viewTicket, setViewTicket] = useState<Ticket | null>(null);
   const { toast } = useToast();
+
+  useImperativeHandle(ref, () => ({
+    refreshTickets: fetchTickets,
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -220,4 +228,6 @@ export const RecentTickets = () => {
       />
     </>
   );
-};
+});
+
+RecentTickets.displayName = 'RecentTickets';
