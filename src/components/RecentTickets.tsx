@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Eye, Edit, Trash2 } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
@@ -6,11 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { ViewTicketModal } from './ViewTicketModal';
+import { EditTicketModal } from './EditTicketModal';
+
+interface Ticket {
+  id: number;
+  task: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  category: 'task' | 'issue' | 'bug' | 'feature' | 'enhancement';
+  expected_due_date: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const RecentTickets = () => {
   const { tickets, isLoading, updateTicket, deleteTicket } = useTickets();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
+  const [viewTicket, setViewTicket] = useState<Ticket | null>(null);
+  const [editTicket, setEditTicket] = useState<Ticket | null>(null);
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -77,6 +91,14 @@ export const RecentTickets = () => {
     }
   };
 
+  const handleView = (ticket: Ticket) => {
+    setViewTicket(ticket);
+  };
+
+  const handleEdit = (ticket: Ticket) => {
+    setEditTicket(ticket);
+  };
+
   const filteredTickets = tickets
     .filter(ticket => {
       const matchesSearch = ticket.task.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,123 +127,151 @@ export const RecentTickets = () => {
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 animate-fade-in">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Recent Tickets</h2>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search tickets..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
+    <>
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 animate-fade-in">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-semibold text-gray-900">Recent Tickets</h2>
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search tickets..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ID</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">TITLE</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">CATEGORY</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">STATUS</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">DUE DATE</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTickets.map((ticket) => (
+                <tr key={ticket.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-gray-900">#{ticket.id}</td>
+                  <td className="py-3 px-4 text-sm text-gray-900 max-w-xs truncate">{ticket.task}</td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
+                      {ticket.category}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <Select
+                      value={ticket.status}
+                      onValueChange={(value) => handleStatusChange(ticket.id, value)}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                            {formatStatus(ticket.status)}
+                          </span>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-900">
+                    {ticket.expected_due_date ? new Date(ticket.expected_due_date).toLocaleDateString() : 'N/A'}
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleView(ticket)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleEdit(ticket)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Ticket</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this ticket? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(ticket.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {filteredTickets.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              {tickets.length === 0 ? 'No tickets found. Create your first ticket!' : 'No tickets match your search criteria.'}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ID</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">TITLE</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">CATEGORY</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">STATUS</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">DUE DATE</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTickets.map((ticket) => (
-              <tr key={ticket.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-4 text-sm text-gray-900">#{ticket.id}</td>
-                <td className="py-3 px-4 text-sm text-gray-900 max-w-xs truncate">{ticket.task}</td>
-                <td className="py-3 px-4">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
-                    {ticket.category}
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  <Select
-                    value={ticket.status}
-                    onValueChange={(value) => handleStatusChange(ticket.id, value)}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue>
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
-                          {formatStatus(ticket.status)}
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-900">
-                  {ticket.expected_due_date ? new Date(ticket.expected_due_date).toLocaleDateString() : 'N/A'}
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center space-x-2">
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:text-red-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Ticket</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this ticket? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(ticket.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        {filteredTickets.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            {tickets.length === 0 ? 'No tickets found. Create your first ticket!' : 'No tickets match your search criteria.'}
-          </div>
-        )}
-      </div>
-    </div>
+      <ViewTicketModal
+        isOpen={!!viewTicket}
+        onClose={() => setViewTicket(null)}
+        ticket={viewTicket}
+      />
+
+      <EditTicketModal
+        isOpen={!!editTicket}
+        onClose={() => setEditTicket(null)}
+        ticket={editTicket}
+        onTicketUpdated={() => {
+          // This will trigger a refetch of tickets
+          window.location.reload();
+        }}
+      />
+    </>
   );
 };
