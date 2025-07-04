@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Eye, Edit, Trash2 } from 'lucide-react';
+import { Search, Eye, Trash2 } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ViewTicketModal } from './ViewTicketModal';
-import { EditTicketModal } from './EditTicketModal';
 
 interface Ticket {
   id: number;
@@ -24,7 +23,6 @@ export const RecentTickets = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [viewTicket, setViewTicket] = useState<Ticket | null>(null);
-  const [editTicket, setEditTicket] = useState<Ticket | null>(null);
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -93,10 +91,6 @@ export const RecentTickets = () => {
 
   const handleView = (ticket: Ticket) => {
     setViewTicket(ticket);
-  };
-
-  const handleEdit = (ticket: Ticket) => {
-    setEditTicket(ticket);
   };
 
   const filteredTickets = tickets
@@ -210,14 +204,6 @@ export const RecentTickets = () => {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0"
-                        onClick={() => handleEdit(ticket)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:text-red-600">
@@ -261,16 +247,6 @@ export const RecentTickets = () => {
         isOpen={!!viewTicket}
         onClose={() => setViewTicket(null)}
         ticket={viewTicket}
-      />
-
-      <EditTicketModal
-        isOpen={!!editTicket}
-        onClose={() => setEditTicket(null)}
-        ticket={editTicket}
-        onTicketUpdated={() => {
-          // This will trigger a refetch of tickets
-          window.location.reload();
-        }}
       />
     </>
   );
