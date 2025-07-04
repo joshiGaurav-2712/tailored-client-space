@@ -19,7 +19,7 @@ interface Ticket {
 }
 
 export const RecentTickets = () => {
-  const { tickets, isLoading, updateTicket, deleteTicket } = useTickets();
+  const { tickets, isLoading, deleteTicket } = useTickets();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [viewTicket, setViewTicket] = useState<Ticket | null>(null);
@@ -55,22 +55,6 @@ export const RecentTickets = () => {
 
   const formatStatus = (status: string) => {
     return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const handleStatusChange = async (ticketId: number, newStatus: string) => {
-    const success = await updateTicket(ticketId, { status: newStatus as any });
-    if (success) {
-      toast({
-        title: "Success!",
-        description: "Ticket status updated successfully.",
-      });
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to update ticket status. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleDelete = async (ticketId: number) => {
@@ -173,23 +157,9 @@ export const RecentTickets = () => {
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <Select
-                      value={ticket.status}
-                      onValueChange={(value) => handleStatusChange(ticket.id, value)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue>
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
-                            {formatStatus(ticket.status)}
-                          </span>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                      {formatStatus(ticket.status)}
+                    </span>
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-900">
                     {ticket.expected_due_date ? new Date(ticket.expected_due_date).toLocaleDateString() : 'N/A'}
