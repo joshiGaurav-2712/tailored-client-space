@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateTicketModalProps {
   isOpen: boolean;
@@ -21,10 +22,10 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
   const [task, setTask] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date>();
-  const [status, setStatus] = useState('pending');
   const [category, setCategory] = useState('task');
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +43,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
           task,
           description,
           expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
-          status,
+          status: 'pending', // Default status, removed from form
           category,
           store_id: 2,
           assigned_to: 2,
@@ -50,12 +51,23 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       });
 
       if (response.ok) {
+        toast({
+          title: "Success!",
+          description: "Ticket created successfully.",
+        });
         onTicketCreated();
         onClose();
         resetForm();
+      } else {
+        throw new Error('Failed to create ticket');
       }
     } catch (error) {
       console.error('Error creating ticket:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create ticket. Please try again.",
+        variant: "destructive",
+      });
     }
     setIsLoading(false);
   };
@@ -64,7 +76,6 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
     setTask('');
     setDescription('');
     setDueDate(undefined);
-    setStatus('pending');
     setCategory('task');
   };
 
@@ -131,40 +142,22 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
             </Popover>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="task">Task</SelectItem>
-                  <SelectItem value="issue">Issue</SelectItem>
-                  <SelectItem value="bug">Bug</SelectItem>
-                  <SelectItem value="feature">Feature</SelectItem>
-                  <SelectItem value="enhancement">Enhancement</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="task">Task</SelectItem>
+                <SelectItem value="issue">Issue</SelectItem>
+                <SelectItem value="bug">Bug</SelectItem>
+                <SelectItem value="feature">Feature</SelectItem>
+                <SelectItem value="enhancement">Enhancement</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

@@ -5,11 +5,13 @@ import { useTickets } from '@/hooks/useTickets';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export const RecentTickets = () => {
   const { tickets, isLoading, updateTicket, deleteTicket } = useTickets();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
+  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -44,11 +46,35 @@ export const RecentTickets = () => {
   };
 
   const handleStatusChange = async (ticketId: number, newStatus: string) => {
-    await updateTicket(ticketId, { status: newStatus as any });
+    const success = await updateTicket(ticketId, { status: newStatus as any });
+    if (success) {
+      toast({
+        title: "Success!",
+        description: "Ticket status updated successfully.",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to update ticket status. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDelete = async (ticketId: number) => {
-    await deleteTicket(ticketId);
+    const success = await deleteTicket(ticketId);
+    if (success) {
+      toast({
+        title: "Success!",
+        description: "Ticket deleted successfully.",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete ticket. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredTickets = tickets

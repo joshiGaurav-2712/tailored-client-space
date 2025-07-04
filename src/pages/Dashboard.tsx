@@ -40,7 +40,7 @@ const Dashboard = () => {
         <div className="mb-8 animate-fade-in">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Welcome to BSC Dashboard</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Welcome to Troopod Dashboard</h1>
               <p className="text-gray-600 mt-1">Overview of your projects and tickets</p>
             </div>
             <div className="text-sm text-gray-500">

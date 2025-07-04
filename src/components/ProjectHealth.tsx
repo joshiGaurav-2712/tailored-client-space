@@ -1,57 +1,77 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-
-interface Project {
-  id: string;
-  name: string;
-  progress: number;
-  status: 'On Track' | 'At Risk' | 'Delayed';
-  statusColor: string;
-  progressColor: string;
-  dueDate: string;
-  description: string;
-  team: string[];
-}
+import { useTickets } from '@/hooks/useTickets';
 
 export const ProjectHealth = () => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const { tickets } = useTickets();
 
-  const projects: Project[] = [
+  // Calculate dynamic project data based on tickets
+  const totalTickets = tickets.length;
+  const completedTickets = tickets.filter(t => t.status === 'completed').length;
+  const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
+  const pendingTickets = tickets.filter(t => t.status === 'pending').length;
+
+  // Calculate overall progress
+  const overallProgress = totalTickets > 0 ? Math.round((completedTickets / totalTickets) * 100) : 0;
+
+  // Determine overall status based on progress and pending tickets
+  const getOverallStatus = () => {
+    if (overallProgress >= 80) return { status: 'On Track', color: 'text-green-600', bgColor: 'bg-green-500' };
+    if (overallProgress >= 50) return { status: 'At Risk', color: 'text-yellow-600', bgColor: 'bg-yellow-500' };
+    return { status: 'Needs Attention', color: 'text-red-600', bgColor: 'bg-red-500' };
+  };
+
+  const overallStatusInfo = getOverallStatus();
+
+  // Create dynamic projects based on ticket data
+  const projects = [
     {
       id: 'proj-1',
-      name: 'Website Redesign',
-      progress: 75,
-      status: 'On Track',
-      statusColor: 'text-green-600',
-      progressColor: 'bg-green-500',
-      dueDate: 'Apr 25, 2025',
-      description: 'Complete overhaul of the company website with modern design and improved UX',
-      team: ['Michael Chen', 'Sarah Wilson', 'David Kim']
-    },
-    {
-      id: 'proj-2',
-      name: 'Mobile App Development',
-      progress: 45,
-      status: 'At Risk',
-      statusColor: 'text-yellow-600',
-      progressColor: 'bg-yellow-500',
-      dueDate: 'May 15, 2025',
-      description: 'Native mobile application for iOS and Android platforms',
-      team: ['James Rodriguez', 'Emily Johnson']
-    },
-    {
-      id: 'proj-3',
-      name: 'API Integration',
-      progress: 20,
-      status: 'Delayed',
-      statusColor: 'text-red-600',
-      progressColor: 'bg-red-500',
-      dueDate: 'Apr 30, 2025',
-      description: 'Integration with third-party payment and notification APIs',
-      team: ['David Thompson', 'Lisa Park']
+      name: 'Overall Progress',
+      progress: overallProgress,
+      status: overallStatusInfo.status,
+      statusColor: overallStatusInfo.color,
+      progressColor: overallStatusInfo.bgColor,
+      dueDate: 'Ongoing',
+      description: `Tracking progress across all ${totalTickets} tickets. ${completedTickets} completed, ${inProgressTickets} in progress, ${pendingTickets} pending.`,
+      team: ['Client Dashboard']
     }
   ];
+
+  // Add individual ticket categories as projects if there are tickets
+  if (tickets.length > 0) {
+    const categories = ['task', 'issue', 'bug', 'feature', 'enhancement'];
+    
+    categories.forEach(category => {
+      const categoryTickets = tickets.filter(t => t.category === category);
+      if (categoryTickets.length > 0) {
+        const categoryCompleted = categoryTickets.filter(t => t.status === 'completed').length;
+        const categoryProgress = Math.round((categoryCompleted / categoryTickets.length) * 100);
+        
+        const getCategoryStatus = () => {
+          if (categoryProgress >= 80) return { status: 'On Track', color: 'text-green-600', bgColor: 'bg-green-500' };
+          if (categoryProgress >= 50) return { status: 'At Risk', color: 'text-yellow-600', bgColor: 'bg-yellow-500' };
+          return { status: 'Behind', color: 'text-red-600', bgColor: 'bg-red-500' };
+        };
+
+        const categoryStatusInfo = getCategoryStatus();
+
+        projects.push({
+          id: `proj-${category}`,
+          name: `${category.charAt(0).toUpperCase() + category.slice(1)} Items`,
+          progress: categoryProgress,
+          status: categoryStatusInfo.status,
+          statusColor: categoryStatusInfo.color,
+          progressColor: categoryStatusInfo.bgColor,
+          dueDate: 'Ongoing',
+          description: `${categoryTickets.length} ${category} items: ${categoryCompleted} completed, ${categoryTickets.filter(t => t.status === 'in_progress').length} in progress`,
+          team: ['Development Team']
+        });
+      }
+    });
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -59,7 +79,8 @@ export const ProjectHealth = () => {
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'At Risk':
         return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
-      case 'Delayed':
+      case 'Behind':
+      case 'Needs Attention':
         return <AlertTriangle className="h-4 w-4 text-red-600" />;
       default:
         return <Clock className="h-4 w-4 text-gray-600" />;
@@ -72,8 +93,20 @@ export const ProjectHealth = () => {
 
   const handleProjectClick = (projectId: string) => {
     console.log(`Navigate to project: ${projectId}`);
-    // Add navigation logic here
   };
+
+  if (tickets.length === 0) {
+    return (
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 hover:shadow-xl transition-all duration-300">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-semibold text-gray-900">Project Health</h2>
+        </div>
+        <div className="text-center py-8 text-gray-500">
+          <p className="text-sm">No tickets found. Create your first ticket to see project health metrics!</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 hover:shadow-xl transition-all duration-300">
@@ -133,14 +166,14 @@ export const ProjectHealth = () => {
               </div>
               
               <div className="text-sm text-gray-500">
-                Due: {project.dueDate}
+                Status: {project.dueDate}
               </div>
 
               {expandedProject === project.id && (
                 <div className="mt-4 pt-4 border-t border-gray-100 animate-fade-in">
                   <p className="text-sm text-gray-600 mb-3">{project.description}</p>
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Team Members:</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Managed by:</p>
                     <div className="flex flex-wrap gap-2">
                       {project.team.map((member, index) => (
                         <span 
