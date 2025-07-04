@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoginForm } from '@/components/LoginForm';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { MetricsCards } from '../components/MetricsCards';
 import { ProjectHealth } from '../components/ProjectHealth';
@@ -8,6 +10,20 @@ import { Timeline } from '../components/Timeline';
 import { CommunicationCenter } from '../components/CommunicationCenter';
 
 const Dashboard = () => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginForm />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
       {/* Background decorative elements */}
@@ -28,7 +44,7 @@ const Dashboard = () => {
               <p className="text-gray-600 mt-1">Overview of your projects and tickets</p>
             </div>
             <div className="text-sm text-gray-500">
-              Last updated: April 8, 2025 - 10:45 AM
+              Last updated: {new Date().toLocaleDateString()} - {new Date().toLocaleTimeString()}
             </div>
           </div>
         </div>
@@ -40,17 +56,20 @@ const Dashboard = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-          {/* Left Column - Project Health & Recent Tickets */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="animate-fade-in delay-300">
-              <ProjectHealth />
-            </div>
+          {/* Left Column - Recent Tickets (Full Width) */}
+          <div className="lg:col-span-3">
             <div className="animate-fade-in delay-400">
               <RecentTickets />
             </div>
           </div>
 
-          {/* Right Column - Timeline & Communication */}
+          {/* Additional components can be added here */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="animate-fade-in delay-300">
+              <ProjectHealth />
+            </div>
+          </div>
+
           <div className="space-y-8">
             <div className="animate-fade-in delay-500">
               <Timeline />

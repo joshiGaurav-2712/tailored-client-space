@@ -1,74 +1,44 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { FolderOpen, Ticket, Clock } from 'lucide-react';
+import { useTickets } from '@/hooks/useTickets';
 
 export const MetricsCards = () => {
-  const [metrics, setMetrics] = useState([
+  const { tickets } = useTickets();
+
+  const completedTickets = tickets.filter(t => t.status === 'completed').length;
+  const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
+  const pendingTickets = tickets.filter(t => t.status === 'pending').length;
+
+  const metrics = [
     {
-      title: 'Active Projects',
-      value: '0',
-      icon: FolderOpen,
+      title: 'Total Tickets',
+      value: tickets.length.toString(),
+      icon: Ticket,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       hoverColor: 'hover:bg-blue-100'
     },
     {
-      title: 'Total Tickets',
-      value: '0',
-      icon: Ticket,
+      title: 'Completed',
+      value: completedTickets.toString(),
+      icon: FolderOpen,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       hoverColor: 'hover:bg-green-100'
     },
     {
-      title: 'Hours Invested',
-      value: '0',
+      title: 'In Progress',
+      value: inProgressTickets.toString(),
       icon: Clock,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      hoverColor: 'hover:bg-purple-100'
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50',
+      hoverColor: 'hover:bg-yellow-100'
     }
-  ]);
-
-  // Simulate loading data with animation
-  useEffect(() => {
-    const loadMetrics = () => {
-      setTimeout(() => {
-        setMetrics([
-          {
-            title: 'Active Projects',
-            value: '3',
-            icon: FolderOpen,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-50',
-            hoverColor: 'hover:bg-blue-100'
-          },
-          {
-            title: 'Total Tickets',
-            value: '12',
-            icon: Ticket,
-            color: 'text-green-600',
-            bgColor: 'bg-green-50',
-            hoverColor: 'hover:bg-green-100'
-          },
-          {
-            title: 'Hours Invested',
-            value: '156.5',
-            icon: Clock,
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-50',
-            hoverColor: 'hover:bg-purple-100'
-          }
-        ]);
-      }, 1000);
-    };
-
-    loadMetrics();
-  }, []);
+  ];
 
   const handleMetricClick = (metricTitle: string) => {
     console.log(`Clicked on ${metricTitle}`);
-    // Add navigation or modal logic here
   };
 
   return (

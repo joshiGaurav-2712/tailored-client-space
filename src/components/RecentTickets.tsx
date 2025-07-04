@@ -1,115 +1,85 @@
 
-import React, { useState, useMemo } from 'react';
-import { Search, Filter, Eye } from 'lucide-react';
-
-interface Ticket {
-  id: string;
-  title: string;
-  priority: 'High' | 'Medium' | 'Low';
-  priorityColor: string;
-  status: 'Open' | 'In Progress' | 'Completed';
-  statusColor: string;
-  assignedTo: string;
-  createdDate: string;
-}
+import React, { useState } from 'react';
+import { Search, Eye, Edit, Trash2 } from 'lucide-react';
+import { useTickets } from '@/hooks/useTickets';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export const RecentTickets = () => {
+  const { tickets, isLoading, updateTicket, deleteTicket } = useTickets();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterPriority, setFilterPriority] = useState<string>('All');
+  const [filterStatus, setFilterStatus] = useState<string>('All');
 
-  const tickets: Ticket[] = [
-    {
-      id: '#T-001',
-      title: 'Homepage Redesign',
-      priority: 'High',
-      priorityColor: 'bg-red-100 text-red-800',
-      status: 'In Progress',
-      statusColor: 'bg-yellow-100 text-yellow-800',
-      assignedTo: 'Michael Chen',
-      createdDate: '2025-04-05'
-    },
-    {
-      id: '#T-002',
-      title: 'Payment Gateway Error',
-      priority: 'High',
-      priorityColor: 'bg-red-100 text-red-800',
-      status: 'Open',
-      statusColor: 'bg-blue-100 text-blue-800',
-      assignedTo: 'Sophia Wilson',
-      createdDate: '2025-04-06'
-    },
-    {
-      id: '#T-003',
-      title: 'Mobile Menu Navigation',
-      priority: 'Medium',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'In Progress',
-      statusColor: 'bg-yellow-100 text-yellow-800',
-      assignedTo: 'James Rodriguez',
-      createdDate: '2025-04-04'
-    },
-    {
-      id: '#T-004',
-      title: 'Product Page Optimization',
-      priority: 'Low',
-      priorityColor: 'bg-blue-100 text-blue-800',
-      status: 'Completed',
-      statusColor: 'bg-green-100 text-green-800',
-      assignedTo: 'Emily Johnson',
-      createdDate: '2025-04-01'
-    },
-    {
-      id: '#T-005',
-      title: 'Database Performance Issue',
-      priority: 'Medium',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'In Progress',
-      statusColor: 'bg-yellow-100 text-yellow-800',
-      assignedTo: 'David Thompson',
-      createdDate: '2025-04-03'
-    },
-    {
-      id: '#T-006',
-      title: 'User Authentication Bug',
-      priority: 'High',
-      priorityColor: 'bg-red-100 text-red-800',
-      status: 'Open',
-      statusColor: 'bg-blue-100 text-blue-800',
-      assignedTo: 'Sarah Lee',
-      createdDate: '2025-04-07'
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-blue-100 text-blue-800';
+      case 'in_progress':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
-  ];
-
-  // Sort tickets by status priority: Open → In Progress → Completed
-  const sortedAndFilteredTickets = useMemo(() => {
-    const statusPriority = { 'Open': 1, 'In Progress': 2, 'Completed': 3 };
-    
-    return tickets
-      .filter(ticket => {
-        const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            ticket.assignedTo.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesPriority = filterPriority === 'All' || ticket.priority === filterPriority;
-        return matchesSearch && matchesPriority;
-      })
-      .sort((a, b) => statusPriority[a.status] - statusPriority[b.status]);
-  }, [searchTerm, filterPriority]);
-
-  const handleViewTicket = (ticketId: string) => {
-    console.log(`Viewing ticket: ${ticketId}`);
-    // Add navigation to ticket detail page
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'bug':
+        return 'bg-red-100 text-red-800';
+      case 'feature':
+        return 'bg-purple-100 text-purple-800';
+      case 'enhancement':
+        return 'bg-blue-100 text-blue-800';
+      case 'issue':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const handlePriorityFilter = (priority: string) => {
-    setFilterPriority(priority);
+  const formatStatus = (status: string) => {
+    return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
+
+  const handleStatusChange = async (ticketId: number, newStatus: string) => {
+    await updateTicket(ticketId, { status: newStatus as any });
+  };
+
+  const handleDelete = async (ticketId: number) => {
+    await deleteTicket(ticketId);
+  };
+
+  const filteredTickets = tickets
+    .filter(ticket => {
+      const matchesSearch = ticket.task.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          ticket.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = filterStatus === 'All' || ticket.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      const statusPriority = { 'pending': 1, 'in_progress': 2, 'completed': 3 };
+      return statusPriority[a.status] - statusPriority[b.status];
+    });
+
+  if (isLoading) {
+    return (
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded mb-4"></div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 animate-fade-in">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Recent Tickets</h2>
         <div className="flex items-center space-x-4">
@@ -119,28 +89,21 @@ export const RecentTickets = () => {
               type="text"
               placeholder="Search tickets..."
               value={searchTerm}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
           </div>
-          <div className="relative">
-            <select
-              value={filterPriority}
-              onChange={(e) => handlePriorityFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-            >
-              <option value="All">All Priorities</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-          <button 
-            onClick={() => console.log('View all tickets')}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-          >
-            View All
-          </button>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -150,45 +113,86 @@ export const RecentTickets = () => {
             <tr className="border-b border-gray-200">
               <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ID</th>
               <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">TITLE</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">PRIORITY</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">CATEGORY</th>
               <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">STATUS</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ASSIGNED TO</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ACTION</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">DUE DATE</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
-            {sortedAndFilteredTickets.map((ticket, index) => (
-              <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4 text-sm text-gray-900">{ticket.id}</td>
-                <td className="py-3 px-4 text-sm text-gray-900">{ticket.title}</td>
+            {filteredTickets.map((ticket) => (
+              <tr key={ticket.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <td className="py-3 px-4 text-sm text-gray-900">#{ticket.id}</td>
+                <td className="py-3 px-4 text-sm text-gray-900 max-w-xs truncate">{ticket.task}</td>
                 <td className="py-3 px-4">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${ticket.priorityColor}`}>
-                    {ticket.priority}
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
+                    {ticket.category}
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${ticket.statusColor}`}>
-                    {ticket.status}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-900">{ticket.assignedTo}</td>
-                <td className="py-3 px-4">
-                  <button 
-                    onClick={() => handleViewTicket(ticket.id)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                  <Select
+                    value={ticket.status}
+                    onValueChange={(value) => handleStatusChange(ticket.id, value)}
                   >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </button>
+                    <SelectTrigger className="w-32">
+                      <SelectValue>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                          {formatStatus(ticket.status)}
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </td>
+                <td className="py-3 px-4 text-sm text-gray-900">
+                  {ticket.expected_due_date ? new Date(ticket.expected_due_date).toLocaleDateString() : 'N/A'}
+                </td>
+                <td className="py-3 px-4">
+                  <div className="flex items-center space-x-2">
+                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:text-red-600">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Ticket</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this ticket? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(ticket.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
         
-        {sortedAndFilteredTickets.length === 0 && (
+        {filteredTickets.length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            No tickets found matching your criteria.
+            {tickets.length === 0 ? 'No tickets found. Create your first ticket!' : 'No tickets match your search criteria.'}
           </div>
         )}
       </div>
