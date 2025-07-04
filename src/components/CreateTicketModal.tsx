@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
   const { user } = useAuth();
   const { toast } = useToast();
   const { stores } = useStores();
-  const { makeAuthenticatedRequest } = useTickets();
+  const { makeAuthenticatedRequest, fetchTickets } = useTickets();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +80,9 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
           title: "Success!",
           description: "Ticket created successfully.",
         });
+        
+        // Immediately refresh the tickets list
+        await fetchTickets();
         
         onTicketCreated();
         onClose();
