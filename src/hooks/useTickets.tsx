@@ -76,7 +76,7 @@ export const useTickets = () => {
     console.log('Updating ticket:', id, updates);
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/update/${id}/`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },

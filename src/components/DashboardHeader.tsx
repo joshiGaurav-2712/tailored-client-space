@@ -23,7 +23,7 @@ export const DashboardHeader = () => {
             {/* Logo and Navigation */}
             <div className="flex items-center space-x-8">
               <div className="flex items-center">
-                <span className="text-2xl font-bold text-purple-400">Troopod</span>
+                <span className="text-2xl font-bold text-purple-800">Troopod</span>
                 {user && (
                   <span className="ml-3 text-sm text-gray-600">
                     Welcome, {user.username}

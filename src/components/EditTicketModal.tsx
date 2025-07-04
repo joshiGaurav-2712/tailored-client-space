@@ -59,7 +59,7 @@ export const EditTicketModal = ({ isOpen, onClose, ticket, onTicketUpdated }: Ed
     setIsLoading(true);
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/update/${ticket.id}/`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },

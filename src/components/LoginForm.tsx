@@ -29,7 +29,7 @@ export const LoginForm = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
       <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200/50 p-8 w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-purple-400 mb-2">Troopod</h1>
+          <h1 className="text-3xl font-bold text-purple-800 mb-2">Troopod</h1>
           <p className="text-gray-600">Sign in to your dashboard</p>
         </div>
 
