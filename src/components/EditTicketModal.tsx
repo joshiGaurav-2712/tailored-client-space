@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,39 +12,52 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-interface CreateTicketModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onTicketCreated: () => void;
+interface Ticket {
+  id: number;
+  task: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  category: 'task' | 'issue' | 'bug' | 'feature' | 'enhancement';
+  expected_due_date: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTicketModalProps) => {
+interface EditTicketModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  ticket: Ticket | null;
+  onTicketUpdated: () => void;
+}
+
+export const EditTicketModal = ({ isOpen, onClose, ticket, onTicketUpdated }: EditTicketModalProps) => {
   const [task, setTask] = useState('');
   const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<'pending' | 'in_progress' | 'completed'>('pending');
+  const [category, setCategory] = useState<'task' | 'issue' | 'bug' | 'feature' | 'enhancement'>('task');
   const [dueDate, setDueDate] = useState<Date>();
-  const [category, setCategory] = useState('task');
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (ticket) {
+      setTask(ticket.task);
+      setDescription(ticket.description);
+      setStatus(ticket.status);
+      setCategory(ticket.category);
+      setDueDate(ticket.expected_due_date ? new Date(ticket.expected_due_date) : undefined);
+    }
+  }, [ticket]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
-    console.log('Creating ticket with data:', {
-      task,
-      description,
-      expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
-      status: 'pending',
-      category,
-      store_id: 2,
-      assigned_to: 2,
-    });
+    if (!user || !ticket) return;
 
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.prod.troopod.io/techservices/api/tickets/create/', {
-        method: 'POST',
+      const response = await fetch(`https://api.prod.troopod.io/techservices/api/tickets/update/${ticket.id}/`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user.access_token}`,
@@ -52,40 +65,29 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         body: JSON.stringify({
           task,
           description,
-          expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
-          status: 'pending',
+          status,
           category,
-          store_id: 2,
-          assigned_to: 2,
+          expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
         }),
       });
 
-      console.log('Create ticket response status:', response.status);
-      
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('Ticket created successfully:', responseData);
-        
         toast({
           title: "Success!",
-          description: "Ticket created successfully.",
+          description: "Ticket updated successfully.",
         });
-        
-        onTicketCreated();
+        onTicketUpdated();
         onClose();
-        resetForm();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to create ticket:', response.status, errorData);
-        
         toast({
           title: "Error",
-          description: `Failed to create ticket: ${errorData.detail || 'Please try again.'}`,
+          description: `Failed to update ticket: ${errorData.detail || 'Please try again.'}`,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error creating ticket:', error);
+      console.error('Error updating ticket:', error);
       toast({
         title: "Error",
         description: "Network error. Please check your connection and try again.",
@@ -95,18 +97,13 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
     setIsLoading(false);
   };
 
-  const resetForm = () => {
-    setTask('');
-    setDescription('');
-    setDueDate(undefined);
-    setCategory('task');
-  };
+  if (!ticket) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Ticket</DialogTitle>
+          <DialogTitle>Edit Ticket #{ticket.id}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -138,6 +135,40 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <Select value={status} onValueChange={(value: any) => setStatus(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <Select value={category} onValueChange={(value: any) => setCategory(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="task">Task</SelectItem>
+                <SelectItem value="issue">Issue</SelectItem>
+                <SelectItem value="bug">Bug</SelectItem>
+                <SelectItem value="feature">Feature</SelectItem>
+                <SelectItem value="enhancement">Enhancement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Due Date
             </label>
             <Popover>
@@ -165,30 +196,12 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
             </Popover>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="task">Task</SelectItem>
-                <SelectItem value="issue">Issue</SelectItem>
-                <SelectItem value="bug">Bug</SelectItem>
-                <SelectItem value="feature">Feature</SelectItem>
-                <SelectItem value="enhancement">Enhancement</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create Ticket'}
+              {isLoading ? 'Updating...' : 'Update Ticket'}
             </Button>
           </div>
         </form>
