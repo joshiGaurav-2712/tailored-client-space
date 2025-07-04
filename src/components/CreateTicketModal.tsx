@@ -11,6 +11,8 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useStores } from '@/hooks/useStores';
+import { useTickets } from '@/hooks/useTickets';
 
 interface CreateTicketModalProps {
   isOpen: boolean;
@@ -23,13 +25,23 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date>();
   const [category, setCategory] = useState('task');
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { stores } = useStores();
+  const { makeAuthenticatedRequest } = useTickets();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !selectedStoreId) {
+      toast({
+        title: "Error",
+        description: "Please select a store before creating the ticket.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     console.log('Creating ticket with data:', {
       task,
@@ -37,17 +49,16 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
       status: 'pending',
       category,
-      store_id: 2,
+      store_id: parseInt(selectedStoreId),
       assigned_to: 2,
     });
 
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.prod.troopod.io/techservices/api/tickets/create/', {
+      const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/create/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.access_token}`,
         },
         body: JSON.stringify({
           task,
@@ -55,14 +66,14 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
           expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
           status: 'pending',
           category,
-          store_id: 2,
+          store_id: parseInt(selectedStoreId),
           assigned_to: 2,
         }),
       });
 
-      console.log('Create ticket response status:', response.status);
+      console.log('Create ticket response status:', response?.status);
       
-      if (response.ok) {
+      if (response?.ok) {
         const responseData = await response.json();
         console.log('Ticket created successfully:', responseData);
         
@@ -75,8 +86,8 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         onClose();
         resetForm();
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to create ticket:', response.status, errorData);
+        const errorData = await response?.json().catch(() => ({}));
+        console.error('Failed to create ticket:', response?.status, errorData);
         
         toast({
           title: "Error",
@@ -100,6 +111,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
     setDescription('');
     setDueDate(undefined);
     setCategory('task');
+    setSelectedStoreId('');
   };
 
   return (
@@ -134,6 +146,24 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
               required
               className="w-full min-h-[100px] px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Store *
+            </label>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a store" />
+              </SelectTrigger>
+              <SelectContent>
+                {stores.map((store) => (
+                  <SelectItem key={store.id} value={store.id.toString()}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -187,7 +217,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || !selectedStoreId}>
               {isLoading ? 'Creating...' : 'Create Ticket'}
             </Button>
           </div>

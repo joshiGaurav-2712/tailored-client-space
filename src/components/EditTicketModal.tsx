@@ -11,6 +11,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useTickets } from '@/hooks/useTickets';
 
 interface Ticket {
   id: number;
@@ -39,6 +40,7 @@ export const EditTicketModal = ({ isOpen, onClose, ticket, onTicketUpdated }: Ed
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { makeAuthenticatedRequest } = useTickets();
 
   useEffect(() => {
     if (ticket) {
@@ -56,11 +58,10 @@ export const EditTicketModal = ({ isOpen, onClose, ticket, onTicketUpdated }: Ed
 
     setIsLoading(true);
     try {
-      const response = await fetch(`https://api.prod.troopod.io/techservices/api/tickets/update/${ticket.id}/`, {
+      const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/update/${ticket.id}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.access_token}`,
         },
         body: JSON.stringify({
           task,
@@ -71,7 +72,7 @@ export const EditTicketModal = ({ isOpen, onClose, ticket, onTicketUpdated }: Ed
         }),
       });
 
-      if (response.ok) {
+      if (response?.ok) {
         toast({
           title: "Success!",
           description: "Ticket updated successfully.",
@@ -79,7 +80,7 @@ export const EditTicketModal = ({ isOpen, onClose, ticket, onTicketUpdated }: Ed
         onTicketUpdated();
         onClose();
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response?.json().catch(() => ({}));
         toast({
           title: "Error",
           description: `Failed to update ticket: ${errorData.detail || 'Please try again.'}`,

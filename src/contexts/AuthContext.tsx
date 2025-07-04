@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  refreshToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -35,6 +36,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     setIsLoading(false);
   }, []);
+
+  const refreshToken = async (): Promise<boolean> => {
+    if (!user?.refresh_token) return false;
+
+    try {
+      const response = await fetch('https://api.prod.troopod.io/api/token/refresh/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh: user.refresh_token }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const updatedUser = {
+          ...user,
+          access_token: data.access,
+        };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return false;
+    }
+  };
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
@@ -70,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, refreshToken }}>
       {children}
     </AuthContext.Provider>
   );
