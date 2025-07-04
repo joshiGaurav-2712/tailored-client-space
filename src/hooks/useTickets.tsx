@@ -60,6 +60,7 @@ export const useTickets = () => {
       if (response?.ok) {
         const data = await response.json();
         console.log('Tickets fetched successfully:', data);
+        console.log('Setting tickets state with:', data.length, 'tickets');
         setTickets(data);
       } else {
         console.error('Failed to fetch tickets:', response?.status);
@@ -86,6 +87,7 @@ export const useTickets = () => {
       console.log('Update ticket response status:', response?.status);
       
       if (response?.ok) {
+        console.log('Ticket updated successfully, refreshing all ticket data...');
         await fetchTickets();
         return true;
       }
@@ -107,6 +109,7 @@ export const useTickets = () => {
       console.log('Delete ticket response status:', response?.status);
       
       if (response?.ok) {
+        console.log('Ticket deleted successfully, refreshing all ticket data...');
         await fetchTickets();
         return true;
       }

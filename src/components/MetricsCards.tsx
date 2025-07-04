@@ -6,6 +6,8 @@ import { useTickets } from '@/hooks/useTickets';
 export const MetricsCards = () => {
   const { tickets } = useTickets();
 
+  console.log('MetricsCards rendering with tickets:', tickets.length);
+
   const completedTickets = tickets.filter(t => t.status === 'completed').length;
   const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
   const pendingTickets = tickets.filter(t => t.status === 'pending').length;

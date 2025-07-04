@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
@@ -6,6 +5,8 @@ import { useTickets } from '@/hooks/useTickets';
 export const ProjectHealth = () => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const { tickets } = useTickets();
+
+  console.log('ProjectHealth rendering with tickets:', tickets.length);
 
   // Calculate dynamic project data based on tickets
   const totalTickets = tickets.length;
