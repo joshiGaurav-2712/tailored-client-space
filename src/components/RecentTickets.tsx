@@ -1,3 +1,4 @@
+
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Search, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
@@ -31,16 +32,17 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
   const { toast } = useToast();
 
   useImperativeHandle(ref, () => ({
-    refreshTickets: fetchTickets,
+    refreshTickets: handleManualRefresh,
   }));
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
+    console.log('Manual refresh triggered - updating all ticket data');
     await fetchTickets();
     setIsRefreshing(false);
     toast({
       title: "Refreshed!",
-      description: "Tickets list has been updated.",
+      description: "All ticket data has been updated.",
     });
   };
 
@@ -85,7 +87,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
       });
     } else {
       toast({
-        title: "Error",
+        title: "Error", 
         description: "Failed to delete ticket. Please try again.",
         variant: "destructive",
       });
@@ -135,6 +137,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
               className="h-8 w-8 p-0"
               onClick={handleManualRefresh}
               disabled={isRefreshing}
+              title="Refresh all ticket data"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
