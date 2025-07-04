@@ -6,11 +6,13 @@ import { useTickets } from '@/hooks/useTickets';
 export const MetricsCards = () => {
   const { tickets } = useTickets();
 
-  console.log('MetricsCards rendering with tickets:', tickets.length);
+  console.log('📊 MetricsCards rendering with', tickets.length, 'tickets');
 
   const completedTickets = tickets.filter(t => t.status === 'completed').length;
   const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
   const pendingTickets = tickets.filter(t => t.status === 'pending').length;
+
+  console.log('📈 Metrics breakdown - Total:', tickets.length, 'Completed:', completedTickets, 'In Progress:', inProgressTickets, 'Pending:', pendingTickets);
 
   const metrics = [
     {
@@ -47,7 +49,7 @@ export const MetricsCards = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {metrics.map((metric, index) => (
         <div 
-          key={index} 
+          key={`${metric.title}-${metric.value}`}
           className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 hover:-translate-y-1 animate-fade-in"
           style={{ animationDelay: `${index * 100}ms` }}
           onClick={() => handleMetricClick(metric.title)}

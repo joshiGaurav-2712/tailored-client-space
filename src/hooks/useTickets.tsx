@@ -50,23 +50,27 @@ export const useTickets = () => {
   const fetchTickets = async () => {
     if (!user) return;
 
-    console.log('Fetching tickets with token:', user.access_token);
+    console.log('🔄 Starting ticket fetch with token:', user.access_token);
     setIsLoading(true);
     try {
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
 
-      console.log('Fetch tickets response status:', response?.status);
+      console.log('📡 Fetch tickets response status:', response?.status);
       
       if (response?.ok) {
         const data = await response.json();
-        console.log('Tickets fetched successfully:', data);
-        console.log('Setting tickets state with:', data.length, 'tickets');
-        setTickets(data);
+        console.log('✅ Tickets fetched successfully:', data.length, 'tickets');
+        console.log('🔄 Updating tickets state from', tickets.length, 'to', data.length, 'tickets');
+        
+        // Force a new array reference to ensure React re-renders
+        setTickets([...data]);
+        
+        console.log('✅ Tickets state updated successfully');
       } else {
-        console.error('Failed to fetch tickets:', response?.status);
+        console.error('❌ Failed to fetch tickets:', response?.status);
       }
     } catch (error) {
-      console.error('Error fetching tickets:', error);
+      console.error('❌ Error fetching tickets:', error);
     }
     setIsLoading(false);
   };
@@ -74,7 +78,7 @@ export const useTickets = () => {
   const updateTicket = async (id: number, updates: Partial<Ticket>) => {
     if (!user) return false;
 
-    console.log('Updating ticket:', id, updates);
+    console.log('🔄 Updating ticket:', id, updates);
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/update/${id}/`, {
         method: 'PATCH',
@@ -84,15 +88,15 @@ export const useTickets = () => {
         body: JSON.stringify(updates),
       });
 
-      console.log('Update ticket response status:', response?.status);
+      console.log('📡 Update ticket response status:', response?.status);
       
       if (response?.ok) {
-        console.log('Ticket updated successfully, refreshing all ticket data...');
+        console.log('✅ Ticket updated successfully, refreshing all ticket data...');
         await fetchTickets();
         return true;
       }
     } catch (error) {
-      console.error('Error updating ticket:', error);
+      console.error('❌ Error updating ticket:', error);
     }
     return false;
   };
@@ -100,28 +104,35 @@ export const useTickets = () => {
   const deleteTicket = async (id: number) => {
     if (!user) return false;
 
-    console.log('Deleting ticket:', id);
+    console.log('🗑️ Deleting ticket:', id);
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/delete/${id}/`, {
         method: 'DELETE',
       });
 
-      console.log('Delete ticket response status:', response?.status);
+      console.log('📡 Delete ticket response status:', response?.status);
       
       if (response?.ok) {
-        console.log('Ticket deleted successfully, refreshing all ticket data...');
+        console.log('✅ Ticket deleted successfully, refreshing all ticket data...');
         await fetchTickets();
+        console.log('🔄 All components should now re-render with updated data');
         return true;
       }
     } catch (error) {
-      console.error('Error deleting ticket:', error);
+      console.error('❌ Error deleting ticket:', error);
     }
     return false;
   };
 
   useEffect(() => {
+    console.log('🎣 useTickets hook effect triggered, user:', !!user);
     fetchTickets();
   }, [user]);
+
+  // Log whenever tickets state changes
+  useEffect(() => {
+    console.log('📊 Tickets state changed - now have', tickets.length, 'tickets');
+  }, [tickets]);
 
   return {
     tickets,

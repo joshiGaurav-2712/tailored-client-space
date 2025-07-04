@@ -6,13 +6,15 @@ export const ProjectHealth = () => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const { tickets } = useTickets();
 
-  console.log('ProjectHealth rendering with tickets:', tickets.length);
+  console.log('🏥 ProjectHealth rendering with', tickets.length, 'tickets');
 
   // Calculate dynamic project data based on tickets
   const totalTickets = tickets.length;
   const completedTickets = tickets.filter(t => t.status === 'completed').length;
   const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
   const pendingTickets = tickets.filter(t => t.status === 'pending').length;
+
+  console.log('🏥 ProjectHealth metrics - Total:', totalTickets, 'Completed:', completedTickets, 'In Progress:', inProgressTickets, 'Pending:', pendingTickets);
 
   // Calculate overall progress
   const overallProgress = totalTickets > 0 ? Math.round((completedTickets / totalTickets) * 100) : 0;
@@ -124,7 +126,7 @@ export const ProjectHealth = () => {
       <div className="space-y-6">
         {projects.map((project, index) => (
           <div 
-            key={project.id} 
+            key={`${project.id}-${project.progress}`}
             className="border border-gray-200/50 rounded-lg p-4 hover:border-gray-300 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-md"
           >
             <div className="space-y-3">
