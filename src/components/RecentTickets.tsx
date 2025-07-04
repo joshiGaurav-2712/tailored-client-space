@@ -1,5 +1,5 @@
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
-import { Search, Eye, Trash2 } from 'lucide-react';
+import { Search, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,11 +27,22 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [viewTicket, setViewTicket] = useState<Ticket | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
   useImperativeHandle(ref, () => ({
     refreshTickets: fetchTickets,
   }));
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchTickets();
+    setIsRefreshing(false);
+    toast({
+      title: "Refreshed!",
+      description: "Tickets list has been updated.",
+    });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -116,7 +127,18 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
     <>
       <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 animate-fade-in">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Tickets</h2>
+          <div className="flex items-center space-x-3">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Tickets</h2>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
