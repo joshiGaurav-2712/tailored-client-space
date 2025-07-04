@@ -21,7 +21,6 @@ export const useTickets = () => {
   const fetchTickets = async () => {
     if (!user) return;
 
-    console.log('Fetching tickets with token:', user.access_token);
     setIsLoading(true);
     try {
       const response = await fetch('https://api.prod.troopod.io/techservices/api/tickets/', {
@@ -30,14 +29,9 @@ export const useTickets = () => {
         },
       });
 
-      console.log('Fetch tickets response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('Tickets fetched successfully:', data);
         setTickets(data);
-      } else {
-        console.error('Failed to fetch tickets:', response.status);
       }
     } catch (error) {
       console.error('Error fetching tickets:', error);
@@ -48,7 +42,6 @@ export const useTickets = () => {
   const updateTicket = async (id: number, updates: Partial<Ticket>) => {
     if (!user) return false;
 
-    console.log('Updating ticket:', id, updates);
     try {
       const response = await fetch(`https://api.prod.troopod.io/techservices/api/tickets/update/${id}/`, {
         method: 'PUT',
@@ -59,8 +52,6 @@ export const useTickets = () => {
         body: JSON.stringify(updates),
       });
 
-      console.log('Update ticket response status:', response.status);
-      
       if (response.ok) {
         await fetchTickets();
         return true;
@@ -74,7 +65,6 @@ export const useTickets = () => {
   const deleteTicket = async (id: number) => {
     if (!user) return false;
 
-    console.log('Deleting ticket:', id);
     try {
       const response = await fetch(`https://api.prod.troopod.io/techservices/api/tickets/delete/${id}/`, {
         method: 'DELETE',
@@ -83,8 +73,6 @@ export const useTickets = () => {
         },
       });
 
-      console.log('Delete ticket response status:', response.status);
-      
       if (response.ok) {
         await fetchTickets();
         return true;

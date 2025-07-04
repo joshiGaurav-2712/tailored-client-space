@@ -31,16 +31,6 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
     e.preventDefault();
     if (!user) return;
 
-    console.log('Creating ticket with data:', {
-      task,
-      description,
-      expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
-      status: 'pending',
-      category,
-      store_id: 2,
-      assigned_to: 2,
-    });
-
     setIsLoading(true);
     try {
       const response = await fetch('https://api.prod.troopod.io/techservices/api/tickets/create/', {
@@ -53,42 +43,29 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
           task,
           description,
           expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
-          status: 'pending',
+          status: 'pending', // Default status, removed from form
           category,
           store_id: 2,
           assigned_to: 2,
         }),
       });
 
-      console.log('Create ticket response status:', response.status);
-      
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('Ticket created successfully:', responseData);
-        
         toast({
           title: "Success!",
           description: "Ticket created successfully.",
         });
-        
         onTicketCreated();
         onClose();
         resetForm();
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to create ticket:', response.status, errorData);
-        
-        toast({
-          title: "Error",
-          description: `Failed to create ticket: ${errorData.detail || 'Please try again.'}`,
-          variant: "destructive",
-        });
+        throw new Error('Failed to create ticket');
       }
     } catch (error) {
       console.error('Error creating ticket:', error);
       toast({
         title: "Error",
-        description: "Network error. Please check your connection and try again.",
+        description: "Failed to create ticket. Please try again.",
         variant: "destructive",
       });
     }
