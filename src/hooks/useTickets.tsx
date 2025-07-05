@@ -109,19 +109,20 @@ export const useTickets = () => {
     setIsLoading(true);
     
     try {
-      // Use the main tickets endpoint which should return all tickets user has access to
+      // First, try the main tickets endpoint
+      console.log('📡 Attempting main tickets endpoint for user:', user.username);
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
 
-      console.log('📡 Tickets API response status for user', user.username, ':', response?.status);
+      console.log('📡 Main tickets API response status for user', user.username, ':', response?.status);
       
       if (response?.ok) {
         const responseData = await response.json();
-        console.log('📋 Raw tickets API response for user', user.username, ':', responseData);
+        console.log('📋 Raw main tickets API response for user', user.username, ':', responseData);
         
         // Handle both array response and paginated response with results
         const ticketsArray = Array.isArray(responseData) ? responseData : (responseData.results || []);
         
-        console.log('🎯 Found', ticketsArray.length, 'total tickets for user:', user.username);
+        console.log('🎯 Found', ticketsArray.length, 'tickets from main endpoint for user:', user.username);
         
         // Group tickets by store for debugging
         const ticketsByStore = ticketsArray.reduce((acc: any, ticket: any) => {
@@ -131,7 +132,16 @@ export const useTickets = () => {
           return acc;
         }, {});
         
-        console.log('🏪 Tickets grouped by store for user', user.username, ':', ticketsByStore);
+        console.log('🏪 Main endpoint tickets grouped by store for user', user.username, ':', ticketsByStore);
+        
+        // Check if we have tickets from all user stores
+        const userStoreNames = userStores.map(s => s.name);
+        const ticketStoreNames = Object.keys(ticketsByStore);
+        const missingStores = userStoreNames.filter(storeName => !ticketStoreNames.includes(storeName));
+        
+        console.log('🔍 User accessible stores:', userStoreNames);
+        console.log('🔍 Stores with tickets from main endpoint:', ticketStoreNames);
+        console.log('🔍 Stores missing from main endpoint:', missingStores);
         
         if (ticketsArray.length > 0) {
           const transformedTickets = ticketsArray.map((ticket: any) => ({
@@ -155,19 +165,19 @@ export const useTickets = () => {
           
           setTickets(transformedTickets);
         } else {
-          console.log('ℹ️ No tickets found for user:', user.username);
+          console.log('ℹ️ No tickets found from main endpoint for user:', user.username);
           setTickets([]);
         }
         
       } else {
-        console.error('❌ Failed to fetch tickets for user', user.username, ':', response?.status);
+        console.error('❌ Failed to fetch tickets from main endpoint for user', user.username, ':', response?.status);
         if (response?.status === 404) {
-          console.log('🔍 No tickets found for user:', user.username);
+          console.log('🔍 No tickets found from main endpoint for user:', user.username);
           setTickets([]);
         }
       }
     } catch (error) {
-      console.error('❌ Error fetching tickets for user', user.username, ':', error);
+      console.error('❌ Error fetching tickets from main endpoint for user', user.username, ':', error);
       setTickets([]);
     } finally {
       setIsLoading(false);
