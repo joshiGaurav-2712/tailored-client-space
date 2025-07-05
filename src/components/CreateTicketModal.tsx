@@ -28,7 +28,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { makeAuthenticatedRequest, userStores } = useTickets();
+  const { makeAuthenticatedRequest, userStores, fetchTickets } = useTickets();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +51,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       store_id: parseInt(selectedStoreId),
     };
 
-    console.log('🎫 Creating ticket with data:', ticketData);
+    console.log('🎫 Creating ticket for user:', user.username, 'with data:', ticketData);
 
     setIsLoading(true);
     try {
@@ -61,18 +61,22 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         body: JSON.stringify(ticketData),
       });
 
-      console.log('📡 Create ticket response status:', response?.status);
+      console.log('📡 Create ticket response status for', user.username, ':', response?.status);
       
       if (response?.ok) {
         const responseData = await response.json();
-        console.log('✅ Ticket created successfully:', responseData);
+        console.log('✅ Ticket created successfully for', user.username, ':', responseData);
         
         toast({
           title: "Success!",
           description: "Ticket created successfully.",
         });
         
-        // Trigger refresh and close modal
+        // Force refresh tickets data to ensure new ticket appears
+        console.log('🔄 Force refreshing tickets after creation for', user.username);
+        await fetchTickets();
+        
+        // Trigger additional refresh and close modal
         onTicketCreated();
         onClose();
         resetForm();
@@ -80,11 +84,11 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         let errorMessage = 'Please try again.';
         try {
           const errorData = await response?.json();
-          console.error('❌ Failed to create ticket:', response?.status, errorData);
+          console.error('❌ Failed to create ticket for', user.username, ':', response?.status, errorData);
           errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
         } catch {
           const errorText = await response?.text();
-          console.error('❌ Failed to create ticket:', response?.status, errorText);
+          console.error('❌ Failed to create ticket for', user.username, ':', response?.status, errorText);
           errorMessage = errorText || 'Unknown error occurred.';
         }
         
@@ -95,7 +99,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         });
       }
     } catch (error) {
-      console.error('❌ Error creating ticket:', error);
+      console.error('❌ Error creating ticket for', user.username, ':', error);
       toast({
         title: "Error",
         description: "Network error. Please check your connection and try again.",
