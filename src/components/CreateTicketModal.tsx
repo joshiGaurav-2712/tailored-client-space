@@ -41,30 +41,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       return;
     }
 
-    // Get current user ID from user data if available, or use a default
-    let currentUserId = null;
-    
-    // Try to get user ID from API first
-    try {
-      const userResponse = await makeAuthenticatedRequest('https://api.prod.troopod.io/user/api/user_data/');
-      if (userResponse?.ok) {
-        const userData = await userResponse.json();
-        console.log('👤 Current user data from API:', userData);
-        
-        // Find current user in the response
-        if (Array.isArray(userData)) {
-          const currentUser = userData.find(u => u.username === user.username);
-          if (currentUser) {
-            currentUserId = currentUser.id;
-            console.log('✅ Found current user ID:', currentUserId, 'for username:', user.username);
-          }
-        }
-      }
-    } catch (error) {
-      console.log('⚠️ Could not fetch user data, will create ticket without assigned_to');
-    }
-
-    // Create ticket data with assigned_to if we have user ID
+    // Use the exact format from the provided API documentation
     const ticketData = {
       task,
       description,
@@ -72,13 +49,13 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       status: 'pending',
       category,
       store_id: parseInt(selectedStoreId),
-      ...(currentUserId && { assigned_to: currentUserId })
     };
 
-    console.log('🎫 Creating ticket for user:', user.username, 'with data:', ticketData, 'for store ID:', selectedStoreId);
+    console.log('🎫 Creating ticket for user:', user.username, 'with data:', ticketData, 'using API: POST https://api.prod.troopod.io/techservices/api/tickets/create/');
 
     setIsLoading(true);
     try {
+      // Use the exact API endpoint from provided documentation
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/create/', {
         method: 'POST',
         body: JSON.stringify(ticketData),
