@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -186,15 +187,9 @@ export const ViewTicketModal = ({ isOpen, onClose, ticket }: ViewTicketModalProp
               </p>
             </div>
           )}
-
-          {displayTicket.total_time_spent !== undefined && (
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">Time Spent</label>
-              <p className="text-gray-900">{displayTicket.total_time_spent} hours</p>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 };
+
