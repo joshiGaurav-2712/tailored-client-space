@@ -37,7 +37,8 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
   const { tickets, isLoading, deleteTicket, fetchTickets } = useTickets();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [viewTicket, setViewTicket] = useState<Ticket | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
@@ -106,8 +107,15 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
   };
 
   const handleView = (ticket: Ticket) => {
-    console.log('Viewing ticket details from Django API:', ticket.id);
-    setViewTicket(ticket);
+    console.log('Opening view modal for ticket:', ticket.id, ticket);
+    setSelectedTicket(ticket);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    console.log('Closing view modal');
+    setIsViewModalOpen(false);
+    setSelectedTicket(null);
   };
 
   const filteredTickets = tickets
@@ -262,9 +270,9 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
       </div>
 
       <ViewTicketModal
-        isOpen={!!viewTicket}
-        onClose={() => setViewTicket(null)}
-        ticket={viewTicket}
+        isOpen={isViewModalOpen}
+        onClose={handleCloseModal}
+        ticket={selectedTicket}
       />
     </>
   );
