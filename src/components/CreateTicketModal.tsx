@@ -1,232 +1,226 @@
-import React from 'react';
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/contexts/AuthContext';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import { useTickets } from '@/hooks/useTickets';
-import { useToast } from "@/hooks/use-toast"
-
-const FormSchema = z.object({
-  task: z.string().min(2, {
-    message: "Task must be at least 2 characters.",
-  }),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
-  expected_due_date: z.string(),
-  status: z.enum(['pending', 'in_progress', 'completed']),
-  category: z.enum(['task', 'issue', 'bug', 'feature', 'enhancement']),
-  store_id: z.string(),
-  assigned_to: z.string().optional(),
-})
 
 interface CreateTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTicketCreated?: () => void;
+  onTicketCreated: () => void;
 }
 
 export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTicketModalProps) => {
-  const { userStores, createTicket } = useTickets();
-  const { toast } = useToast()
+  const [task, setTask] = useState('');
+  const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState<Date>();
+  const [category, setCategory] = useState('task');
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { makeAuthenticatedRequest, userStores } = useTickets();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
-    defaultValues: {
-      task: "",
-      description: "",
-      expected_due_date: "",
-      status: 'pending',
-      category: 'task',
-      store_id: '',
-      assigned_to: '',
-    },
-  })
-
-  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-    console.log('📝 Submitting ticket creation with data:', data);
-    
-    const ticketData = {
-      task: data.task,
-      description: data.description,
-      expected_due_date: data.expected_due_date,
-      status: data.status,
-      category: data.category,
-      store_id: parseInt(data.store_id),
-      ...(data.assigned_to && { assigned_to: parseInt(data.assigned_to) }),
-    };
-
-    console.log('🎫 Processed ticket data for API:', ticketData);
-    
-    const success = await createTicket(ticketData);
-    
-    if (success) {
-      console.log('✅ Ticket created successfully via API');
-      toast({
-        title: "Success!",
-        description: "Ticket created successfully.",
-      });
-      form.reset();
-      onClose();
-      onTicketCreated?.();
-    } else {
-      console.log('❌ Failed to create ticket via API');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !selectedStoreId) {
       toast({
         title: "Error",
-        description: "Failed to create ticket. Please try again.",
+        description: "Please select a store before creating the ticket.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Use the exact format from the API documentation
+    const ticketData = {
+      task,
+      description,
+      expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
+      status: 'pending',
+      category,
+      store_id: parseInt(selectedStoreId),
+    };
+
+    console.log('🎫 Creating ticket with data:', ticketData);
+
+    setIsLoading(true);
+    try {
+      // Use the exact API endpoint from documentation
+      const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/create/', {
+        method: 'POST',
+        body: JSON.stringify(ticketData),
+      });
+
+      console.log('📡 Create ticket response status:', response?.status);
+      
+      if (response?.ok) {
+        const responseData = await response.json();
+        console.log('✅ Ticket created successfully:', responseData);
+        
+        toast({
+          title: "Success!",
+          description: "Ticket created successfully.",
+        });
+        
+        // Trigger refresh and close modal
+        onTicketCreated();
+        onClose();
+        resetForm();
+      } else {
+        let errorMessage = 'Please try again.';
+        try {
+          const errorData = await response?.json();
+          console.error('❌ Failed to create ticket:', response?.status, errorData);
+          errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+        } catch {
+          const errorText = await response?.text();
+          console.error('❌ Failed to create ticket:', response?.status, errorText);
+          errorMessage = errorText || 'Unknown error occurred.';
+        }
+        
+        toast({
+          title: "Error",
+          description: `Failed to create ticket: ${errorMessage}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error creating ticket:', error);
+      toast({
+        title: "Error",
+        description: "Network error. Please check your connection and try again.",
         variant: "destructive",
       });
     }
+    setIsLoading(false);
+  };
+
+  const resetForm = () => {
+    setTask('');
+    setDescription('');
+    setDueDate(undefined);
+    setCategory('task');
+    setSelectedStoreId('');
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create Ticket</DialogTitle>
+          <DialogTitle>Create New Ticket</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="task"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Task</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter task" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Task Name *
+            </label>
+            <Input
+              type="text"
+              value={task}
+              onChange={(e) => setTask(e.target.value)}
+              placeholder="Enter task name"
+              required
             />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter description" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description *
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter task description"
+              required
+              className="w-full min-h-[100px] px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
-            <FormField
-              control={form.control}
-              name="expected_due_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Expected Due Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="task">Task</SelectItem>
-                      <SelectItem value="issue">Issue</SelectItem>
-                      <SelectItem value="bug">Bug</SelectItem>
-                      <SelectItem value="feature">Feature</SelectItem>
-                      <SelectItem value="enhancement">Enhancement</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="store_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Store</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a store" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {userStores.map((store) => (
-                        <SelectItem key={store.id} value={store.id.toString()}>{store.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="assigned_to"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Assigned To (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter user ID" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit">Create Ticket</Button>
-          </form>
-        </Form>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Store *
+            </label>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a store" />
+              </SelectTrigger>
+              <SelectContent>
+                {userStores.map((store) => (
+                  <SelectItem key={store.id} value={store.id.toString()}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Due Date
+            </label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !dueDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dueDate}
+                  onSelect={setDueDate}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="task">Task</SelectItem>
+                <SelectItem value="issue">Issue</SelectItem>
+                <SelectItem value="bug">Bug</SelectItem>
+                <SelectItem value="feature">Feature</SelectItem>
+                <SelectItem value="enhancement">Enhancement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading || !selectedStoreId}>
+              {isLoading ? 'Creating...' : 'Create Ticket'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
