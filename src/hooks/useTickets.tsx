@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -106,17 +107,20 @@ export const useTickets = () => {
     setIsLoading(true);
     
     try {
-      // Use the Django API endpoint that returns user-relevant tickets
+      // Use the exact API endpoint from the documentation
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
 
       console.log('📡 Fetch tickets response status:', response?.status);
       
       if (response?.ok) {
         const responseData = await response.json();
-        console.log('📊 Raw tickets received:', responseData.length);
+        console.log('📊 Raw tickets received:', responseData);
+        
+        // Check if response is an array or has a results property
+        const ticketsArray = Array.isArray(responseData) ? responseData : (responseData.results || []);
         
         // Transform tickets to ensure consistent format
-        const transformedTickets = responseData.map((ticket: any) => ({
+        const transformedTickets = ticketsArray.map((ticket: any) => ({
           id: ticket.id,
           task: ticket.task,
           description: ticket.description,
@@ -135,7 +139,10 @@ export const useTickets = () => {
         
       } else {
         console.error('❌ Failed to fetch tickets:', response?.status, response?.statusText);
-        setTickets([]);
+        if (response?.status === 404) {
+          console.log('🔍 No tickets found for this user');
+          setTickets([]);
+        }
       }
     } catch (error) {
       console.error('❌ Error fetching tickets:', error);
@@ -171,9 +178,16 @@ export const useTickets = () => {
 
     console.log('🔄 Updating ticket:', id, updates);
     try {
+      // Transform the updates to match API expectations
+      const apiUpdates = {
+        ...updates,
+        // Change store_id to store if it's in the updates
+        ...(updates.store && { store: updates.store.id }),
+      };
+
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/update/${id}/`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates),
+        method: 'PUT',
+        body: JSON.stringify(apiUpdates),
       });
 
       console.log('📡 Update ticket response status:', response?.status);
@@ -183,7 +197,8 @@ export const useTickets = () => {
         await fetchTickets();
         return true;
       } else {
-        console.error('❌ Failed to update ticket:', response?.status);
+        const errorData = await response?.text();
+        console.error('❌ Failed to update ticket:', response?.status, errorData);
       }
     } catch (error) {
       console.error('❌ Error updating ticket:', error);

@@ -41,7 +41,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       return;
     }
 
-    // Only send the required fields to the Django API
+    // Use the exact format from the API documentation
     const ticketData = {
       task,
       description,
@@ -51,23 +51,21 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       store_id: parseInt(selectedStoreId),
     };
 
-    console.log('Creating ticket with data:', ticketData);
+    console.log('🎫 Creating ticket with data:', ticketData);
 
     setIsLoading(true);
     try {
+      // Use the exact API endpoint from documentation
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/create/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(ticketData),
       });
 
-      console.log('Create ticket response status:', response?.status);
+      console.log('📡 Create ticket response status:', response?.status);
       
       if (response?.ok) {
         const responseData = await response.json();
-        console.log('Ticket created successfully:', responseData);
+        console.log('✅ Ticket created successfully:', responseData);
         
         toast({
           title: "Success!",
@@ -79,17 +77,25 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         onClose();
         resetForm();
       } else {
-        const errorData = await response?.json().catch(() => ({}));
-        console.error('Failed to create ticket:', response?.status, errorData);
+        let errorMessage = 'Please try again.';
+        try {
+          const errorData = await response?.json();
+          console.error('❌ Failed to create ticket:', response?.status, errorData);
+          errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+        } catch {
+          const errorText = await response?.text();
+          console.error('❌ Failed to create ticket:', response?.status, errorText);
+          errorMessage = errorText || 'Unknown error occurred.';
+        }
         
         toast({
           title: "Error",
-          description: `Failed to create ticket: ${errorData.detail || 'Please try again.'}`,
+          description: `Failed to create ticket: ${errorMessage}`,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error creating ticket:', error);
+      console.error('❌ Error creating ticket:', error);
       toast({
         title: "Error",
         description: "Network error. Please check your connection and try again.",
