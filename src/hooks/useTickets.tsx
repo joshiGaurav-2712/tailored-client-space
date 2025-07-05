@@ -51,6 +51,11 @@ export const useTickets = () => {
     };
 
     console.log('🔐 Making authenticated request to:', url, 'for user:', user.username);
+    console.log('🔑 Request headers:', {
+      'Authorization': `Bearer ${user.access_token.substring(0, 20)}...`,
+      'Content-Type': 'application/json'
+    });
+    
     let response = await fetch(url, requestOptions);
 
     // If token is expired, try to refresh and retry once
@@ -103,20 +108,52 @@ export const useTickets = () => {
       return;
     }
 
-    console.log('🎫 Fetching tickets for authenticated user:', user.username, 'using API: GET https://api.prod.troopod.io/techservices/api/tickets/');
+    console.log('🎫 === DEBUGGING TICKET FETCH FOR USER:', user.username, '===');
+    console.log('🔍 User details:', {
+      username: user.username,
+      hasAccessToken: !!user.access_token,
+      tokenPreview: user.access_token ? user.access_token.substring(0, 20) + '...' : 'none'
+    });
+    
     setIsLoading(true);
     
     try {
+      console.log('📡 Making GET request to: https://api.prod.troopod.io/techservices/api/tickets/');
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
 
-      console.log('📡 Fetch tickets response status for', user.username, ':', response?.status);
+      console.log('📊 === RESPONSE ANALYSIS FOR', user.username, '===');
+      console.log('📡 Response status:', response?.status);
+      console.log('📡 Response ok:', response?.ok);
+      console.log('📡 Response headers:', Object.fromEntries(response?.headers.entries() || []));
       
       if (response?.ok) {
         const responseData = await response.json();
-        console.log('📊 Raw tickets API response for', user.username, ':', responseData);
+        console.log('📋 === RAW API RESPONSE DETAILS ===');
+        console.log('📋 Response type:', typeof responseData);
+        console.log('📋 Response is array:', Array.isArray(responseData));
+        console.log('📋 Response keys:', Object.keys(responseData));
+        console.log('📋 Full response data:', JSON.stringify(responseData, null, 2));
         
         // Handle both array response and paginated response with results
         const ticketsArray = Array.isArray(responseData) ? responseData : (responseData.results || []);
+        
+        console.log('🎯 === TICKETS ARRAY ANALYSIS ===');
+        console.log('🎯 Tickets array length:', ticketsArray.length);
+        console.log('🎯 First 3 tickets:', ticketsArray.slice(0, 3));
+        
+        if (ticketsArray.length > 0) {
+          console.log('🏪 === STORE ANALYSIS FOR TICKETS ===');
+          ticketsArray.forEach((ticket, index) => {
+            console.log(`🎫 Ticket ${index + 1}:`, {
+              id: ticket.id,
+              task: ticket.task,
+              store_id: ticket.store?.id,
+              store_name: ticket.store?.name,
+              status: ticket.status,
+              created_at: ticket.created_at
+            });
+          });
+        }
         
         // Transform tickets to ensure consistent format matching API structure
         const transformedTickets = ticketsArray.map((ticket: any) => ({
@@ -133,32 +170,38 @@ export const useTickets = () => {
           total_time_spent: ticket.total_time_spent || 0,
         }));
 
-        console.log('✅ Setting tickets state for', user.username, 'with', transformedTickets.length, 'tickets from API');
-        console.log('🏪 Tickets by store for', user.username, ':', transformedTickets.map(t => ({ 
-          id: t.id, 
-          task: t.task, 
-          store: t.store?.name || 'No Store' 
-        })));
+        console.log('✅ === FINAL TICKETS STATE FOR', user.username, '===');
+        console.log('✅ Total tickets after transformation:', transformedTickets.length);
+        console.log('🏪 Tickets by store:', transformedTickets.reduce((acc, ticket) => {
+          const storeName = ticket.store?.name || 'No Store';
+          acc[storeName] = (acc[storeName] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>));
         
         setTickets(transformedTickets);
         
       } else {
-        console.error('❌ Failed to fetch tickets for', user.username, ':', response?.status, response?.statusText);
+        console.error('❌ === API ERROR DETAILS FOR', user.username, '===');
+        console.error('❌ Status:', response?.status);
+        console.error('❌ Status text:', response?.statusText);
+        
         if (response?.status === 404) {
-          console.log('🔍 No tickets found for user:', user.username);
+          console.log('🔍 404 - No tickets endpoint found or no tickets for user:', user.username);
           setTickets([]);
         } else {
           // Try to get error details from response
           try {
-            const errorData = await response.text();
-            console.error('❌ API Error details:', errorData);
+            const errorData = await response?.text();
+            console.error('❌ API Error response body:', errorData);
           } catch (e) {
             console.error('❌ Could not parse error response');
           }
         }
       }
     } catch (error) {
-      console.error('❌ Network error fetching tickets for', user.username, ':', error);
+      console.error('❌ === NETWORK ERROR FOR', user.username, '===');
+      console.error('❌ Error details:', error);
+      console.error('❌ Error message:', error instanceof Error ? error.message : 'Unknown error');
       setTickets([]);
     } finally {
       setIsLoading(false);
@@ -242,10 +285,17 @@ export const useTickets = () => {
 
   // Effect to fetch stores and tickets when user changes
   useEffect(() => {
-    console.log('🎣 useTickets effect triggered, user:', user ? user.username : 'none');
+    console.log('🎣 === useTickets EFFECT TRIGGERED ===');
+    console.log('🎣 User state:', user ? {
+      username: user.username,
+      hasToken: !!user.access_token
+    } : 'No user');
+    
     if (user) {
       console.log('🔄 User authenticated as:', user.username, '- fetching stores and tickets from APIs');
-      fetchUserStores().then(() => {
+      fetchUserStores().then((stores) => {
+        console.log('🏪 Stores fetched, now fetching tickets for user:', user.username);
+        console.log('🏪 User has access to stores:', stores.map(s => s.name));
         fetchTickets();
       });
     } else {
@@ -258,13 +308,21 @@ export const useTickets = () => {
 
   // Log whenever tickets state changes
   useEffect(() => {
-    console.log('📊 Tickets state updated for', user?.username, '- now have', tickets.length, 'tickets from API');
+    console.log('📊 === TICKETS STATE CHANGE ===');
+    console.log('📊 User:', user?.username || 'No user');
+    console.log('📊 Tickets count:', tickets.length);
+    
     if (tickets.length > 0) {
-      console.log('🏪 Current tickets breakdown by store from API:', tickets.reduce((acc, ticket) => {
+      console.log('🏪 Current tickets breakdown by store:', tickets.reduce((acc, ticket) => {
         const storeName = ticket.store?.name || 'Unknown Store';
         acc[storeName] = (acc[storeName] || 0) + 1;
         return acc;
       }, {} as Record<string, number>));
+      
+      console.log('📋 All ticket IDs:', tickets.map(t => t.id));
+      console.log('📋 All ticket statuses:', tickets.map(t => ({ id: t.id, status: t.status })));
+    } else {
+      console.log('📊 No tickets in state');
     }
   }, [tickets, user]);
 
