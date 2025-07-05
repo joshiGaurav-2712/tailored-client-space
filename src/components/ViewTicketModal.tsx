@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -102,11 +103,6 @@ export const ViewTicketModal = ({ isOpen, onClose, ticket }: ViewTicketModalProp
     return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const getAssignedToName = (assignedTo: any) => {
-    if (!assignedTo) return 'Unassigned';
-    return `${assignedTo.first_name} ${assignedTo.last_name}`.trim() || assignedTo.username;
-  };
-
   if (isLoading && !detailedTicket) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -159,11 +155,6 @@ export const ViewTicketModal = ({ isOpen, onClose, ticket }: ViewTicketModalProp
               <p className="text-gray-900">{displayTicket.store.name}</p>
             </div>
           )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">Assigned To</label>
-            <p className="text-gray-900">{getAssignedToName(displayTicket.assigned_to)}</p>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-500 mb-2">Description</label>
