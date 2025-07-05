@@ -75,17 +75,17 @@ export const useTickets = () => {
   const fetchUserStores = async () => {
     if (!user) return [];
 
-    console.log('🏪 Fetching user stores for:', user.username);
+    console.log('🏪 Fetching user stores for:', user.username, 'using API: GET https://api.prod.troopod.io/store/');
     try {
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/store/');
       
       if (response?.ok) {
         const stores = await response.json();
-        console.log('✅ User stores fetched for', user.username, ':', stores.length, 'stores -', stores.map(s => s.name));
+        console.log('✅ User stores fetched for', user.username, ':', stores.length, 'stores -', stores.map((s: Store) => s.name));
         setUserStores(stores);
         return stores;
       } else {
-        console.error('❌ Failed to fetch user stores for', user.username, ':', response?.status);
+        console.error('❌ Failed to fetch user stores for', user.username, ':', response?.status, response?.statusText);
         setUserStores([]);
         return [];
       }
@@ -103,7 +103,7 @@ export const useTickets = () => {
       return;
     }
 
-    console.log('🎫 Fetching tickets for authenticated user:', user.username);
+    console.log('🎫 Fetching tickets for authenticated user:', user.username, 'using API: GET https://api.prod.troopod.io/techservices/api/tickets/');
     setIsLoading(true);
     
     try {
@@ -113,12 +113,12 @@ export const useTickets = () => {
       
       if (response?.ok) {
         const responseData = await response.json();
-        console.log('📊 Raw tickets received for', user.username, ':', responseData);
+        console.log('📊 Raw tickets API response for', user.username, ':', responseData);
         
-        // Check if response is an array or has a results property
+        // Handle both array response and paginated response with results
         const ticketsArray = Array.isArray(responseData) ? responseData : (responseData.results || []);
         
-        // Transform tickets to ensure consistent format
+        // Transform tickets to ensure consistent format matching API structure
         const transformedTickets = ticketsArray.map((ticket: any) => ({
           id: ticket.id,
           task: ticket.task,
@@ -133,8 +133,13 @@ export const useTickets = () => {
           total_time_spent: ticket.total_time_spent || 0,
         }));
 
-        console.log('✅ Setting tickets state for', user.username, 'with', transformedTickets.length, 'transformed tickets');
-        console.log('🏪 Tickets by store for', user.username, ':', transformedTickets.map(t => ({ id: t.id, task: t.task, store: t.store?.name })));
+        console.log('✅ Setting tickets state for', user.username, 'with', transformedTickets.length, 'tickets from API');
+        console.log('🏪 Tickets by store for', user.username, ':', transformedTickets.map(t => ({ 
+          id: t.id, 
+          task: t.task, 
+          store: t.store?.name || 'No Store' 
+        })));
+        
         setTickets(transformedTickets);
         
       } else {
@@ -142,10 +147,18 @@ export const useTickets = () => {
         if (response?.status === 404) {
           console.log('🔍 No tickets found for user:', user.username);
           setTickets([]);
+        } else {
+          // Try to get error details from response
+          try {
+            const errorData = await response.text();
+            console.error('❌ API Error details:', errorData);
+          } catch (e) {
+            console.error('❌ Could not parse error response');
+          }
         }
       }
     } catch (error) {
-      console.error('❌ Error fetching tickets for', user.username, ':', error);
+      console.error('❌ Network error fetching tickets for', user.username, ':', error);
       setTickets([]);
     } finally {
       setIsLoading(false);
@@ -155,7 +168,7 @@ export const useTickets = () => {
   const fetchTicketById = async (id: number) => {
     if (!user) return null;
 
-    console.log('🎫 Fetching ticket by ID:', id, 'for user:', user.username);
+    console.log('🎫 Fetching ticket by ID:', id, 'for user:', user.username, 'using API: GET https://api.prod.troopod.io/techservices/api/tickets/' + id + '/');
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/${id}/`);
       
@@ -164,7 +177,7 @@ export const useTickets = () => {
         console.log('✅ Ticket fetched by ID for', user.username, ':', ticket);
         return ticket;
       } else {
-        console.error('❌ Failed to fetch ticket by ID for', user.username, ':', response?.status);
+        console.error('❌ Failed to fetch ticket by ID for', user.username, ':', response?.status, response?.statusText);
         return null;
       }
     } catch (error) {
@@ -176,29 +189,26 @@ export const useTickets = () => {
   const updateTicket = async (id: number, updates: Partial<Ticket>) => {
     if (!user) return false;
 
-    console.log('🔄 Updating ticket:', id, 'for user:', user.username, 'with updates:', updates);
+    console.log('🔄 Updating ticket:', id, 'for user:', user.username, 'with updates:', updates, 'using API: PUT https://api.prod.troopod.io/techservices/api/tickets/update/' + id + '/');
     try {
-      // Transform the updates to match API expectations
-      const apiUpdates = {
-        ...updates,
-        // Change store_id to store if it's in the updates
-        ...(updates.store && { store: updates.store.id }),
-      };
-
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/update/${id}/`, {
         method: 'PUT',
-        body: JSON.stringify(apiUpdates),
+        body: JSON.stringify(updates),
       });
 
       console.log('📡 Update ticket response status for', user.username, ':', response?.status);
       
       if (response?.ok) {
-        console.log('✅ Ticket updated successfully for', user.username, ', refreshing ticket data...');
+        console.log('✅ Ticket updated successfully for', user.username, ', refreshing ticket data from API...');
         await fetchTickets();
         return true;
       } else {
-        const errorData = await response?.text();
-        console.error('❌ Failed to update ticket for', user.username, ':', response?.status, errorData);
+        try {
+          const errorData = await response?.text();
+          console.error('❌ Failed to update ticket for', user.username, ':', response?.status, errorData);
+        } catch (e) {
+          console.error('❌ Failed to update ticket for', user.username, ':', response?.status, 'Could not parse error');
+        }
       }
     } catch (error) {
       console.error('❌ Error updating ticket for', user.username, ':', error);
@@ -209,7 +219,7 @@ export const useTickets = () => {
   const deleteTicket = async (id: number) => {
     if (!user) return false;
 
-    console.log('🗑️ Deleting ticket:', id, 'for user:', user.username);
+    console.log('🗑️ Deleting ticket:', id, 'for user:', user.username, 'using API: DELETE https://api.prod.troopod.io/techservices/api/tickets/delete/' + id + '/');
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/delete/${id}/`, {
         method: 'DELETE',
@@ -218,11 +228,11 @@ export const useTickets = () => {
       console.log('📡 Delete ticket response status for', user.username, ':', response?.status);
       
       if (response?.ok) {
-        console.log('✅ Ticket deleted successfully for', user.username, ', refreshing ticket data...');
+        console.log('✅ Ticket deleted successfully for', user.username, ', refreshing ticket data from API...');
         await fetchTickets();
         return true;
       } else {
-        console.error('❌ Failed to delete ticket for', user.username, ':', response?.status);
+        console.error('❌ Failed to delete ticket for', user.username, ':', response?.status, response?.statusText);
       }
     } catch (error) {
       console.error('❌ Error deleting ticket for', user.username, ':', error);
@@ -234,7 +244,7 @@ export const useTickets = () => {
   useEffect(() => {
     console.log('🎣 useTickets effect triggered, user:', user ? user.username : 'none');
     if (user) {
-      console.log('🔄 User changed to:', user.username, '- fetching stores and tickets');
+      console.log('🔄 User authenticated as:', user.username, '- fetching stores and tickets from APIs');
       fetchUserStores().then(() => {
         fetchTickets();
       });
@@ -248,9 +258,9 @@ export const useTickets = () => {
 
   // Log whenever tickets state changes
   useEffect(() => {
-    console.log('📊 Tickets state updated for', user?.username, '- now have', tickets.length, 'tickets');
+    console.log('📊 Tickets state updated for', user?.username, '- now have', tickets.length, 'tickets from API');
     if (tickets.length > 0) {
-      console.log('🏪 Current tickets breakdown by store:', tickets.reduce((acc, ticket) => {
+      console.log('🏪 Current tickets breakdown by store from API:', tickets.reduce((acc, ticket) => {
         const storeName = ticket.store?.name || 'Unknown Store';
         acc[storeName] = (acc[storeName] || 0) + 1;
         return acc;

@@ -41,7 +41,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       return;
     }
 
-    // Use the exact format from the API documentation
+    // Use the exact format from the provided API documentation
     const ticketData = {
       task,
       description,
@@ -51,29 +51,29 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       store_id: parseInt(selectedStoreId),
     };
 
-    console.log('🎫 Creating ticket for user:', user.username, 'with data:', ticketData);
+    console.log('🎫 Creating ticket for user:', user.username, 'with data:', ticketData, 'using API: POST https://api.prod.troopod.io/techservices/api/tickets/create/');
 
     setIsLoading(true);
     try {
-      // Use the exact API endpoint from documentation
+      // Use the exact API endpoint from provided documentation
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/create/', {
         method: 'POST',
         body: JSON.stringify(ticketData),
       });
 
-      console.log('📡 Create ticket response status for', user.username, ':', response?.status);
+      console.log('📡 Create ticket API response status for', user.username, ':', response?.status);
       
       if (response?.ok) {
         const responseData = await response.json();
-        console.log('✅ Ticket created successfully for', user.username, ':', responseData);
+        console.log('✅ Ticket created successfully via API for', user.username, ':', responseData);
         
         toast({
           title: "Success!",
           description: "Ticket created successfully.",
         });
         
-        // Force refresh tickets data to ensure new ticket appears
-        console.log('🔄 Force refreshing tickets after creation for', user.username);
+        // Force refresh tickets data from API to ensure new ticket appears
+        console.log('🔄 Force refreshing tickets from API after creation for', user.username);
         await fetchTickets();
         
         // Trigger additional refresh and close modal
@@ -84,11 +84,11 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         let errorMessage = 'Please try again.';
         try {
           const errorData = await response?.json();
-          console.error('❌ Failed to create ticket for', user.username, ':', response?.status, errorData);
+          console.error('❌ Failed to create ticket via API for', user.username, ':', response?.status, errorData);
           errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
         } catch {
           const errorText = await response?.text();
-          console.error('❌ Failed to create ticket for', user.username, ':', response?.status, errorText);
+          console.error('❌ Failed to create ticket via API for', user.username, ':', response?.status, errorText);
           errorMessage = errorText || 'Unknown error occurred.';
         }
         
@@ -99,7 +99,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         });
       }
     } catch (error) {
-      console.error('❌ Error creating ticket for', user.username, ':', error);
+      console.error('❌ Network error creating ticket via API for', user.username, ':', error);
       toast({
         title: "Error",
         description: "Network error. Please check your connection and try again.",
@@ -153,7 +153,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Store *
+              Store * (Fetched from API)
             </label>
             <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
               <SelectTrigger>
@@ -200,7 +200,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
+              Category (API Values: task, issue, bug, feature, enhancement)
             </label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger>
