@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -39,34 +40,21 @@ export const ViewTicketModal = ({ isOpen, onClose, ticket }: ViewTicketModalProp
 
   useEffect(() => {
     if (ticket && isOpen) {
-      console.log('ViewTicketModal opened with ticket:', ticket.id);
       setIsLoading(true);
-      setDetailedTicket(ticket); // Set the ticket data immediately
-      
-      // Try to fetch more detailed information, but don't block on it
+      // Fetch detailed ticket information using the API
       fetchTicketById(ticket.id).then((detailed) => {
         if (detailed) {
-          console.log('Fetched detailed ticket data:', detailed);
           setDetailedTicket(detailed);
         } else {
-          console.log('Using original ticket data as detailed fetch failed');
+          // Fallback to the passed ticket if API call fails
+          setDetailedTicket(ticket);
         }
         setIsLoading(false);
-      }).catch((error) => {
-        console.error('Error fetching detailed ticket:', error);
-        setIsLoading(false);
       });
-    } else if (!isOpen) {
-      // Reset state when modal closes
-      setDetailedTicket(null);
-      setIsLoading(false);
     }
   }, [ticket, isOpen, fetchTicketById]);
 
-  if (!ticket) {
-    console.log('No ticket provided to ViewTicketModal');
-    return null;
-  }
+  if (!ticket) return null;
 
   const displayTicket = detailedTicket || ticket;
 
@@ -107,7 +95,7 @@ export const ViewTicketModal = ({ isOpen, onClose, ticket }: ViewTicketModalProp
     return `${assignedTo.first_name} ${assignedTo.last_name}`.trim() || assignedTo.username;
   };
 
-  if (isLoading && !detailedTicket) {
+  if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[600px]">
@@ -123,8 +111,6 @@ export const ViewTicketModal = ({ isOpen, onClose, ticket }: ViewTicketModalProp
       </Dialog>
     );
   }
-
-  console.log('Rendering ViewTicketModal with ticket:', displayTicket.id, displayTicket.task);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
