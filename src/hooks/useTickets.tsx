@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -50,10 +51,6 @@ export const useTickets = () => {
     };
 
     console.log('🔐 Making authenticated request to:', url, 'for user:', user.username);
-    console.log('🔑 Request headers:', {
-      'Authorization': `Bearer ${user.access_token.substring(0, 20)}...`,
-      'Content-Type': 'application/json'
-    });
     
     let response = await fetch(url, requestOptions);
 
@@ -79,67 +76,114 @@ export const useTickets = () => {
   const fetchUserStores = async () => {
     if (!user) return [];
 
-    console.log('🏪 Fetching user stores for:', user.username, 'using API: GET https://api.prod.troopod.io/store/');
+    console.log('🏪 Fetching user stores for:', user.username);
     try {
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/store/');
       
       if (response?.ok) {
         const stores = await response.json();
-        console.log('✅ User stores fetched for', user.username, ':', stores.length, 'stores -', stores.map((s: Store) => s.name));
+        console.log('✅ User stores fetched:', stores.length, 'stores for user:', user.username);
+        console.log('🏪 Store details:', stores.map(s => ({ id: s.id, name: s.name })));
         setUserStores(stores);
         return stores;
       } else {
-        console.error('❌ Failed to fetch user stores for', user.username, ':', response?.status, response?.statusText);
+        console.error('❌ Failed to fetch user stores:', response?.status);
         setUserStores([]);
         return [];
       }
     } catch (error) {
-      console.error('❌ Error fetching user stores for', user.username, ':', error);
+      console.error('❌ Error fetching user stores:', error);
       setUserStores([]);
       return [];
     }
   };
 
-  const fetchTicketsByStore = async (storeId: number) => {
-    if (!user) return [];
+  const fetchAllTicketsFromStores = async (stores: Store[]) => {
+    if (!user || stores.length === 0) {
+      console.log('❌ No user or stores available for ticket fetching');
+      return [];
+    }
 
-    console.log('🏪 Fetching tickets by store ID:', storeId, 'for user:', user.username, 'using API: GET https://api.prod.troopod.io/techservices/api/tickets/?store_id=' + storeId);
+    console.log('🎫 Fetching tickets from', stores.length, 'stores for user:', user.username);
+    
+    const allTickets: Ticket[] = [];
+    
+    // Try to fetch all tickets first from the main endpoint
     try {
-      const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/?store_id=${storeId}`);
+      console.log('📡 Attempting main tickets endpoint for all stores');
+      const mainResponse = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
       
-      if (response?.ok) {
-        const responseData = await response.json();
-        const ticketsArray = Array.isArray(responseData) ? responseData : (responseData.results || []);
-        console.log('✅ Store tickets fetched for', user.username, ':', ticketsArray.length, 'tickets from store', storeId);
-        return ticketsArray;
+      if (mainResponse?.ok) {
+        const mainData = await mainResponse.json();
+        const mainTickets = Array.isArray(mainData) ? mainData : (mainData.results || []);
+        console.log('📋 Main endpoint returned', mainTickets.length, 'tickets');
+        
+        if (mainTickets.length > 0) {
+          allTickets.push(...mainTickets);
+          console.log('✅ Added', mainTickets.length, 'tickets from main endpoint');
+        }
       } else {
-        console.error('❌ Failed to fetch store tickets for', user.username, ':', response?.status, response?.statusText);
-        return [];
+        console.warn('⚠️ Main tickets endpoint failed with status:', mainResponse?.status);
       }
     } catch (error) {
-      console.error('❌ Error fetching store tickets for', user.username, ':', error);
-      return [];
+      console.warn('⚠️ Main tickets endpoint error:', error);
     }
-  };
 
-  const fetchAllStoreTickets = async (stores: Store[]) => {
-    if (!user || stores.length === 0) return [];
+    // If main endpoint didn't return tickets for all stores, try store-specific endpoints
+    const storeTicketCounts = stores.reduce((acc: any, store) => {
+      const storeTickets = allTickets.filter(ticket => ticket.store?.id === store.id);
+      acc[store.name] = storeTickets.length;
+      return acc;
+    }, {});
 
-    console.log('🏪 Fetching tickets for all user stores:', stores.map(s => s.name));
-    try {
-      const allTickets = [];
+    console.log('🏪 Tickets by store from main endpoint:', storeTicketCounts);
+
+    // Check if any stores are missing tickets and try store-specific endpoints
+    for (const store of stores) {
+      const storeTicketsFromMain = allTickets.filter(ticket => ticket.store?.id === store.id);
       
-      for (const store of stores) {
-        const storeTickets = await fetchTicketsByStore(store.id);
-        allTickets.push(...storeTickets);
+      if (storeTicketsFromMain.length === 0) {
+        console.log(`🔍 No tickets found for store ${store.name} (ID: ${store.id}) from main endpoint, trying store-specific endpoint`);
+        
+        try {
+          const storeResponse = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/?store=${store.id}`);
+          
+          if (storeResponse?.ok) {
+            const storeData = await storeResponse.json();
+            const storeTickets = Array.isArray(storeData) ? storeData : (storeData.results || []);
+            
+            if (storeTickets.length > 0) {
+              console.log(`✅ Found ${storeTickets.length} tickets for store ${store.name} from store-specific endpoint`);
+              allTickets.push(...storeTickets);
+            } else {
+              console.log(`ℹ️ No tickets found for store ${store.name} from store-specific endpoint`);
+            }
+          } else {
+            console.warn(`⚠️ Store-specific endpoint failed for ${store.name}:`, storeResponse?.status);
+          }
+        } catch (error) {
+          console.warn(`⚠️ Error fetching tickets for store ${store.name}:`, error);
+        }
       }
-      
-      console.log('✅ All store tickets fetched for', user.username, ':', allTickets.length, 'total tickets');
-      return allTickets;
-    } catch (error) {
-      console.error('❌ Error fetching all store tickets for', user.username, ':', error);
-      return [];
     }
+
+    // Remove duplicates based on ticket ID
+    const uniqueTickets = allTickets.filter((ticket, index, arr) => 
+      arr.findIndex(t => t.id === ticket.id) === index
+    );
+
+    console.log('🎯 Total unique tickets found:', uniqueTickets.length);
+    
+    // Final breakdown by store
+    const finalStoreBreakdown = stores.reduce((acc: any, store) => {
+      const storeTickets = uniqueTickets.filter(ticket => ticket.store?.id === store.id);
+      acc[store.name] = storeTickets.length;
+      return acc;
+    }, {});
+
+    console.log('📊 Final tickets breakdown by store:', finalStoreBreakdown);
+
+    return uniqueTickets;
   };
 
   const fetchTickets = async () => {
@@ -149,113 +193,48 @@ export const useTickets = () => {
       return;
     }
 
-    console.log('🎫 === DEBUGGING TICKET FETCH FOR USER:', user.username, '===');
-    console.log('🔍 User details:', {
-      username: user.username,
-      hasAccessToken: !!user.access_token,
-      tokenPreview: user.access_token ? user.access_token.substring(0, 20) + '...' : 'none'
-    });
-    
+    console.log('🎫 Starting ticket fetch process for user:', user.username);
     setIsLoading(true);
     
     try {
-      // First try: Fetch all tickets (might be filtered by assigned_to)
-      console.log('📡 PRIMARY: Making GET request to: https://api.prod.troopod.io/techservices/api/tickets/');
-      const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
-
-      console.log('📊 === PRIMARY RESPONSE ANALYSIS FOR', user.username, '===');
-      console.log('📡 Response status:', response?.status);
-      console.log('📡 Response ok:', response?.ok);
+      // First ensure we have the latest store information
+      const stores = userStores.length > 0 ? userStores : await fetchUserStores();
       
-      if (response?.ok) {
-        const responseData = await response.json();
-        console.log('📋 Primary API response data:', JSON.stringify(responseData, null, 2));
-        
-        // Handle both array response and paginated response with results
-        const ticketsArray = Array.isArray(responseData) ? responseData : (responseData.results || []);
-        
-        console.log('🎯 Primary tickets array length:', ticketsArray.length);
-        
-        if (ticketsArray.length > 0) {
-          // We got tickets from primary endpoint
-          console.log('✅ PRIMARY SUCCESS: Found', ticketsArray.length, 'tickets from main endpoint');
-          
-          const transformedTickets = ticketsArray.map((ticket: any) => ({
-            id: ticket.id,
-            task: ticket.task,
-            description: ticket.description,
-            status: ticket.status,
-            category: ticket.category,
-            expected_due_date: ticket.expected_due_date,
-            created_at: ticket.created_at,
-            updated_at: ticket.updated_at,
-            store: ticket.store,
-            assigned_to: ticket.assigned_to,
-            total_time_spent: ticket.total_time_spent || 0,
-          }));
-
-          console.log('✅ Setting tickets from PRIMARY endpoint for', user.username, ':', transformedTickets.length);
-          setTickets(transformedTickets);
-          
-        } else {
-          // Primary endpoint returned empty - try alternative approaches
-          console.log('⚠️ PRIMARY EMPTY: Main endpoint returned no tickets, trying store-based fetch...');
-          
-          // Try fetching by user's accessible stores
-          const stores = userStores.length > 0 ? userStores : await fetchUserStores();
-          
-          if (stores.length > 0) {
-            console.log('🏪 SECONDARY: Attempting to fetch tickets by stores:', stores.map(s => s.name));
-            const storeTickets = await fetchAllStoreTickets(stores);
-            
-            if (storeTickets.length > 0) {
-              const transformedTickets = storeTickets.map((ticket: any) => ({
-                id: ticket.id,
-                task: ticket.task,
-                description: ticket.description,
-                status: ticket.status,
-                category: ticket.category,
-                expected_due_date: ticket.expected_due_date,
-                created_at: ticket.created_at,
-                updated_at: ticket.updated_at,
-                store: ticket.store,
-                assigned_to: ticket.assigned_to,
-                total_time_spent: ticket.total_time_spent || 0,
-              }));
-
-              console.log('✅ SECONDARY SUCCESS: Found', transformedTickets.length, 'tickets from store-based fetch');
-              setTickets(transformedTickets);
-            } else {
-              console.log('❌ SECONDARY FAILED: No tickets found even with store-based fetch');
-              setTickets([]);
-            }
-          } else {
-            console.log('❌ No accessible stores found for user:', user.username);
-            setTickets([]);
-          }
-        }
-        
-      } else {
-        console.error('❌ === API ERROR DETAILS FOR', user.username, '===');
-        console.error('❌ Status:', response?.status);
-        console.error('❌ Status text:', response?.statusText);
-        
-        if (response?.status === 404) {
-          console.log('🔍 404 - No tickets endpoint found or no tickets for user:', user.username);
-          setTickets([]);
-        } else {
-          try {
-            const errorData = await response?.text();
-            console.error('❌ API Error response body:', errorData);
-          } catch (e) {
-            console.error('❌ Could not parse error response');
-          }
-        }
+      if (stores.length === 0) {
+        console.log('⚠️ No stores found for user:', user.username);
+        setTickets([]);
+        return;
       }
+
+      console.log('🏪 User has access to stores:', stores.map(s => s.name));
+
+      // Fetch tickets from all accessible stores
+      const allTickets = await fetchAllTicketsFromStores(stores);
+
+      if (allTickets.length > 0) {
+        const transformedTickets = allTickets.map((ticket: any) => ({
+          id: ticket.id,
+          task: ticket.task,
+          description: ticket.description,
+          status: ticket.status,
+          category: ticket.category,
+          expected_due_date: ticket.expected_due_date,
+          created_at: ticket.created_at,
+          updated_at: ticket.updated_at,
+          store: ticket.store,
+          assigned_to: ticket.assigned_to,
+          total_time_spent: ticket.total_time_spent || 0,
+        }));
+
+        console.log('✅ Setting', transformedTickets.length, 'total tickets for user:', user.username);
+        setTickets(transformedTickets);
+      } else {
+        console.log('ℹ️ No tickets found across all stores for user:', user.username);
+        setTickets([]);
+      }
+
     } catch (error) {
-      console.error('❌ === NETWORK ERROR FOR', user.username, '===');
-      console.error('❌ Error details:', error);
-      console.error('❌ Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ Error in fetchTickets process for user', user.username, ':', error);
       setTickets([]);
     } finally {
       setIsLoading(false);
@@ -265,20 +244,20 @@ export const useTickets = () => {
   const fetchTicketById = async (id: number) => {
     if (!user) return null;
 
-    console.log('🎫 Fetching ticket by ID:', id, 'for user:', user.username, 'using API: GET https://api.prod.troopod.io/techservices/api/tickets/' + id + '/');
+    console.log('🎫 Fetching ticket by ID:', id);
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/${id}/`);
       
       if (response?.ok) {
         const ticket = await response.json();
-        console.log('✅ Ticket fetched by ID for', user.username, ':', ticket);
+        console.log('✅ Ticket fetched by ID:', ticket);
         return ticket;
       } else {
-        console.error('❌ Failed to fetch ticket by ID for', user.username, ':', response?.status, response?.statusText);
+        console.error('❌ Failed to fetch ticket by ID:', response?.status);
         return null;
       }
     } catch (error) {
-      console.error('❌ Error fetching ticket by ID for', user.username, ':', error);
+      console.error('❌ Error fetching ticket by ID:', error);
       return null;
     }
   };
@@ -286,99 +265,66 @@ export const useTickets = () => {
   const updateTicket = async (id: number, updates: Partial<Ticket>) => {
     if (!user) return false;
 
-    console.log('🔄 Updating ticket:', id, 'for user:', user.username, 'with updates:', updates, 'using API: PUT https://api.prod.troopod.io/techservices/api/tickets/update/' + id + '/');
+    console.log('🔄 Updating ticket:', id, 'with updates:', updates);
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/update/${id}/`, {
         method: 'PUT',
         body: JSON.stringify(updates),
       });
 
-      console.log('📡 Update ticket response status for', user.username, ':', response?.status);
-      
       if (response?.ok) {
-        console.log('✅ Ticket updated successfully for', user.username, ', refreshing ticket data from API...');
+        console.log('✅ Ticket updated successfully, refreshing data');
         await fetchTickets();
         return true;
       } else {
-        try {
-          const errorData = await response?.text();
-          console.error('❌ Failed to update ticket for', user.username, ':', response?.status, errorData);
-        } catch (e) {
-          console.error('❌ Failed to update ticket for', user.username, ':', response?.status, 'Could not parse error');
-        }
+        console.error('❌ Failed to update ticket:', response?.status);
+        return false;
       }
     } catch (error) {
-      console.error('❌ Error updating ticket for', user.username, ':', error);
+      console.error('❌ Error updating ticket:', error);
+      return false;
     }
-    return false;
   };
 
   const deleteTicket = async (id: number) => {
     if (!user) return false;
 
-    console.log('🗑️ Deleting ticket:', id, 'for user:', user.username, 'using API: DELETE https://api.prod.troopod.io/techservices/api/tickets/delete/' + id + '/');
+    console.log('🗑️ Deleting ticket:', id);
     try {
       const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/delete/${id}/`, {
         method: 'DELETE',
       });
 
-      console.log('📡 Delete ticket response status for', user.username, ':', response?.status);
-      
       if (response?.ok) {
-        console.log('✅ Ticket deleted successfully for', user.username, ', refreshing ticket data from API...');
+        console.log('✅ Ticket deleted successfully, refreshing data');
         await fetchTickets();
         return true;
       } else {
-        console.error('❌ Failed to delete ticket for', user.username, ':', response?.status, response?.statusText);
+        console.error('❌ Failed to delete ticket:', response?.status);
+        return false;
       }
     } catch (error) {
-      console.error('❌ Error deleting ticket for', user.username, ':', error);
+      console.error('❌ Error deleting ticket:', error);
+      return false;
     }
-    return false;
   };
 
   // Effect to fetch stores and tickets when user changes
   useEffect(() => {
-    console.log('🎣 === useTickets EFFECT TRIGGERED ===');
-    console.log('🎣 User state:', user ? {
-      username: user.username,
-      hasToken: !!user.access_token
-    } : 'No user');
-    
     if (user) {
-      console.log('🔄 User authenticated as:', user.username, '- fetching stores and tickets from APIs');
+      console.log('🔄 User authenticated, fetching stores and tickets for:', user.username);
       fetchUserStores().then((stores) => {
-        console.log('🏪 Stores fetched, now fetching tickets for user:', user.username);
-        console.log('🏪 User has access to stores:', stores.map(s => s.name));
-        fetchTickets();
+        console.log('🎯 User has access to', stores.length, 'stores, now fetching tickets');
+        if (stores.length > 0) {
+          fetchTickets();
+        }
       });
     } else {
-      // Clear data when user logs out
       console.log('🧹 Clearing data for logged out user');
       setTickets([]);
       setUserStores([]);
     }
   }, [user]);
-
-  // Log whenever tickets state changes
-  useEffect(() => {
-    console.log('📊 === TICKETS STATE CHANGE ===');
-    console.log('📊 User:', user?.username || 'No user');
-    console.log('📊 Tickets count:', tickets.length);
-    
-    if (tickets.length > 0) {
-      console.log('🏪 Current tickets breakdown by store:', tickets.reduce((acc, ticket) => {
-        const storeName = ticket.store?.name || 'Unknown Store';
-        acc[storeName] = (acc[storeName] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>));
-      
-      console.log('📋 All ticket IDs:', tickets.map(t => t.id));
-      console.log('📋 All ticket statuses:', tickets.map(t => ({ id: t.id, status: t.status })));
-    } else {
-      console.log('📊 No tickets in state');
-    }
-  }, [tickets, user]);
 
   return {
     tickets,
