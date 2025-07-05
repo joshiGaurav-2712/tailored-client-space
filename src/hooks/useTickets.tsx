@@ -104,38 +104,17 @@ export const useTickets = () => {
     setIsLoading(true);
     
     try {
-      // Fetch user stores first if not already loaded
-      let stores = userStores;
-      if (stores.length === 0) {
-        stores = await fetchUserStores() || [];
-      }
-
-      if (stores.length === 0) {
-        console.log('⚠️ No stores found for user, cannot fetch tickets');
-        setTickets([]);
-        setIsLoading(false);
-        return;
-      }
-
+      // Use the correct API endpoint that returns user-relevant tickets
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
 
       console.log('📡 Fetch tickets response status:', response?.status);
       
       if (response?.ok) {
-        const allTickets = await response.json();
-        console.log('📊 Raw tickets received:', allTickets.length);
-        
-        // Filter tickets to only include those from user's stores
-        const userStoreIds = stores.map(store => store.id);
-        const filteredTickets = allTickets.filter((ticket: Ticket) => 
-          ticket.store && userStoreIds.includes(ticket.store.id)
-        );
-        
-        console.log('🔍 Filtered tickets for user stores:', filteredTickets.length, 'tickets');
-        console.log('🏪 User store IDs:', userStoreIds);
+        const userTickets = await response.json();
+        console.log('📊 User-specific tickets received:', userTickets.length);
         
         // Transform tickets to match the expected format for backward compatibility
-        const transformedTickets = filteredTickets.map((ticket: Ticket) => ({
+        const transformedTickets = userTickets.map((ticket: Ticket) => ({
           id: ticket.id,
           task: ticket.task,
           description: ticket.description,
@@ -144,17 +123,31 @@ export const useTickets = () => {
           expected_due_date: ticket.expected_due_date,
           created_at: ticket.created_at,
           updated_at: ticket.updated_at,
+          store: ticket.store,
+          assigned_to: ticket.assigned_to,
+          total_time_spent: ticket.total_time_spent,
           // Add store information for display purposes
           store_name: ticket.store?.name || 'Unknown Store',
           assigned_to_name: ticket.assigned_to ? 
-            `${ticket.assigned_to.username}` : 'Unassigned'
+            `${ticket.assigned_to.first_name} ${ticket.assigned_to.last_name}`.trim() || ticket.assigned_to.username : 'Unassigned'
         }));
 
         console.log('✅ Setting tickets state with', transformedTickets.length, 'transformed tickets');
         setTickets(transformedTickets);
         
-        // Force re-render by creating new array reference
-        setTickets([...transformedTickets]);
+        // Extract unique stores from tickets for userStores if not already set
+        if (userStores.length === 0) {
+          const storesFromTickets = transformedTickets
+            .filter(ticket => ticket.store)
+            .map(ticket => ticket.store)
+            .filter((store, index, self) => 
+              index === self.findIndex(s => s.id === store.id)
+            );
+          
+          if (storesFromTickets.length > 0) {
+            setUserStores(storesFromTickets);
+          }
+        }
         
       } else {
         console.error('❌ Failed to fetch tickets:', response?.status, response?.statusText);
@@ -165,6 +158,27 @@ export const useTickets = () => {
       setTickets([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchTicketById = async (id: number) => {
+    if (!user) return null;
+
+    console.log('🎫 Fetching ticket by ID:', id);
+    try {
+      const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/${id}/`);
+      
+      if (response?.ok) {
+        const ticket = await response.json();
+        console.log('✅ Ticket fetched by ID:', ticket);
+        return ticket;
+      } else {
+        console.error('❌ Failed to fetch ticket by ID:', response?.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching ticket by ID:', error);
+      return null;
     }
   };
 
@@ -240,6 +254,7 @@ export const useTickets = () => {
     tickets,
     isLoading,
     fetchTickets,
+    fetchTicketById,
     updateTicket,
     deleteTicket,
     makeAuthenticatedRequest,

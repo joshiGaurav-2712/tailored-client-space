@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,6 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useStores } from '@/hooks/useStores';
 import { useTickets } from '@/hooks/useTickets';
 
 interface CreateTicketModalProps {
@@ -28,8 +28,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { stores } = useStores();
-  const { makeAuthenticatedRequest } = useTickets();
+  const { makeAuthenticatedRequest, userStores } = useTickets();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,15 +41,16 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       return;
     }
 
-    console.log('Creating ticket with data:', {
+    const ticketData = {
       task,
       description,
       expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
       status: 'pending',
       category,
       store_id: parseInt(selectedStoreId),
-      assigned_to: 2,
-    });
+    };
+
+    console.log('Creating ticket with data:', ticketData);
 
     setIsLoading(true);
     try {
@@ -59,15 +59,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          task,
-          description,
-          expected_due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
-          status: 'pending',
-          category,
-          store_id: parseInt(selectedStoreId),
-          assigned_to: 2,
-        }),
+        body: JSON.stringify(ticketData),
       });
 
       console.log('Create ticket response status:', response?.status);
@@ -157,7 +149,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
                 <SelectValue placeholder="Select a store" />
               </SelectTrigger>
               <SelectContent>
-                {stores.map((store) => (
+                {userStores.map((store) => (
                   <SelectItem key={store.id} value={store.id.toString()}>
                     {store.name}
                   </SelectItem>
