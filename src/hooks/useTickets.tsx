@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -73,7 +72,7 @@ export const useTickets = () => {
   };
 
   const fetchUserStores = async () => {
-    if (!user) return;
+    if (!user) return [];
 
     console.log('🏪 Fetching user stores...');
     try {
@@ -86,10 +85,12 @@ export const useTickets = () => {
         return stores;
       } else {
         console.error('❌ Failed to fetch user stores:', response?.status);
+        setUserStores([]);
         return [];
       }
     } catch (error) {
       console.error('❌ Error fetching user stores:', error);
+      setUserStores([]);
       return [];
     }
   };
@@ -97,24 +98,25 @@ export const useTickets = () => {
   const fetchTickets = async () => {
     if (!user) {
       console.log('❌ No user authenticated, skipping ticket fetch');
+      setTickets([]);
       return;
     }
 
-    console.log('🎫 Starting ticket fetch for authenticated user:', user.username);
+    console.log('🎫 Fetching tickets for authenticated user:', user.username);
     setIsLoading(true);
     
     try {
-      // Use the correct API endpoint that returns user-relevant tickets
+      // Use the Django API endpoint that returns user-relevant tickets
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
 
       console.log('📡 Fetch tickets response status:', response?.status);
       
       if (response?.ok) {
-        const userTickets = await response.json();
-        console.log('📊 User-specific tickets received:', userTickets.length);
+        const responseData = await response.json();
+        console.log('📊 Raw tickets received:', responseData.length);
         
-        // Transform tickets to match the expected format for backward compatibility
-        const transformedTickets = userTickets.map((ticket: Ticket) => ({
+        // Transform tickets to ensure consistent format
+        const transformedTickets = responseData.map((ticket: any) => ({
           id: ticket.id,
           task: ticket.task,
           description: ticket.description,
@@ -125,29 +127,11 @@ export const useTickets = () => {
           updated_at: ticket.updated_at,
           store: ticket.store,
           assigned_to: ticket.assigned_to,
-          total_time_spent: ticket.total_time_spent,
-          // Add store information for display purposes
-          store_name: ticket.store?.name || 'Unknown Store',
-          assigned_to_name: ticket.assigned_to ? 
-            `${ticket.assigned_to.first_name} ${ticket.assigned_to.last_name}`.trim() || ticket.assigned_to.username : 'Unassigned'
+          total_time_spent: ticket.total_time_spent || 0,
         }));
 
         console.log('✅ Setting tickets state with', transformedTickets.length, 'transformed tickets');
         setTickets(transformedTickets);
-        
-        // Extract unique stores from tickets for userStores if not already set
-        if (userStores.length === 0) {
-          const storesFromTickets = transformedTickets
-            .filter(ticket => ticket.store)
-            .map(ticket => ticket.store)
-            .filter((store, index, self) => 
-              index === self.findIndex(s => s.id === store.id)
-            );
-          
-          if (storesFromTickets.length > 0) {
-            setUserStores(storesFromTickets);
-          }
-        }
         
       } else {
         console.error('❌ Failed to fetch tickets:', response?.status, response?.statusText);

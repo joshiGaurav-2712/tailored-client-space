@@ -1,4 +1,3 @@
-
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Search, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
@@ -17,6 +16,17 @@ interface Ticket {
   expected_due_date: string;
   created_at: string;
   updated_at: string;
+  store?: {
+    id: number;
+    name: string;
+  };
+  assigned_to?: {
+    id: number;
+    username: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+  } | null;
 }
 
 export interface RecentTicketsRef {
@@ -37,7 +47,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    console.log('Manual refresh triggered - updating all ticket data');
+    console.log('Manual refresh triggered - fetching latest ticket data from Django API');
     await fetchTickets();
     setIsRefreshing(false);
     toast({
@@ -79,6 +89,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
   };
 
   const handleDelete = async (ticketId: number) => {
+    console.log('Deleting ticket via Django API:', ticketId);
     const success = await deleteTicket(ticketId);
     if (success) {
       toast({
@@ -95,6 +106,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
   };
 
   const handleView = (ticket: Ticket) => {
+    console.log('Viewing ticket details from Django API:', ticket.id);
     setViewTicket(ticket);
   };
 
@@ -109,6 +121,8 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
       const statusPriority = { 'pending': 1, 'in_progress': 2, 'completed': 3 };
       return statusPriority[a.status] - statusPriority[b.status];
     });
+
+  console.log('RecentTickets rendering with', filteredTickets.length, 'filtered tickets from Django API');
 
   if (isLoading) {
     return (
@@ -137,7 +151,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
               className="h-8 w-8 p-0"
               onClick={handleManualRefresh}
               disabled={isRefreshing}
-              title="Refresh all ticket data"
+              title="Refresh all ticket data from Django API"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -204,6 +218,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                         variant="ghost" 
                         className="h-8 w-8 p-0"
                         onClick={() => handleView(ticket)}
+                        title="View ticket details from Django API"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>

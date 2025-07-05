@@ -41,6 +41,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
       return;
     }
 
+    // Only send the required fields to the Django API
     const ticketData = {
       task,
       description,
@@ -73,7 +74,7 @@ export const CreateTicketModal = ({ isOpen, onClose, onTicketCreated }: CreateTi
           description: "Ticket created successfully.",
         });
         
-        // Trigger the parent component to refresh
+        // Trigger refresh and close modal
         onTicketCreated();
         onClose();
         resetForm();
