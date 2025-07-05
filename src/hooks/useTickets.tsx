@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -101,6 +100,48 @@ export const useTickets = () => {
     }
   };
 
+  const fetchTicketsByStore = async (storeId: number) => {
+    if (!user) return [];
+
+    console.log('🏪 Fetching tickets by store ID:', storeId, 'for user:', user.username, 'using API: GET https://api.prod.troopod.io/techservices/api/tickets/?store_id=' + storeId);
+    try {
+      const response = await makeAuthenticatedRequest(`https://api.prod.troopod.io/techservices/api/tickets/?store_id=${storeId}`);
+      
+      if (response?.ok) {
+        const responseData = await response.json();
+        const ticketsArray = Array.isArray(responseData) ? responseData : (responseData.results || []);
+        console.log('✅ Store tickets fetched for', user.username, ':', ticketsArray.length, 'tickets from store', storeId);
+        return ticketsArray;
+      } else {
+        console.error('❌ Failed to fetch store tickets for', user.username, ':', response?.status, response?.statusText);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Error fetching store tickets for', user.username, ':', error);
+      return [];
+    }
+  };
+
+  const fetchAllStoreTickets = async (stores: Store[]) => {
+    if (!user || stores.length === 0) return [];
+
+    console.log('🏪 Fetching tickets for all user stores:', stores.map(s => s.name));
+    try {
+      const allTickets = [];
+      
+      for (const store of stores) {
+        const storeTickets = await fetchTicketsByStore(store.id);
+        allTickets.push(...storeTickets);
+      }
+      
+      console.log('✅ All store tickets fetched for', user.username, ':', allTickets.length, 'total tickets');
+      return allTickets;
+    } catch (error) {
+      console.error('❌ Error fetching all store tickets for', user.username, ':', error);
+      return [];
+    }
+  };
+
   const fetchTickets = async () => {
     if (!user) {
       console.log('❌ No user authenticated, skipping ticket fetch');
@@ -118,67 +159,81 @@ export const useTickets = () => {
     setIsLoading(true);
     
     try {
-      console.log('📡 Making GET request to: https://api.prod.troopod.io/techservices/api/tickets/');
+      // First try: Fetch all tickets (might be filtered by assigned_to)
+      console.log('📡 PRIMARY: Making GET request to: https://api.prod.troopod.io/techservices/api/tickets/');
       const response = await makeAuthenticatedRequest('https://api.prod.troopod.io/techservices/api/tickets/');
 
-      console.log('📊 === RESPONSE ANALYSIS FOR', user.username, '===');
+      console.log('📊 === PRIMARY RESPONSE ANALYSIS FOR', user.username, '===');
       console.log('📡 Response status:', response?.status);
       console.log('📡 Response ok:', response?.ok);
-      console.log('📡 Response headers:', Object.fromEntries(response?.headers.entries() || []));
       
       if (response?.ok) {
         const responseData = await response.json();
-        console.log('📋 === RAW API RESPONSE DETAILS ===');
-        console.log('📋 Response type:', typeof responseData);
-        console.log('📋 Response is array:', Array.isArray(responseData));
-        console.log('📋 Response keys:', Object.keys(responseData));
-        console.log('📋 Full response data:', JSON.stringify(responseData, null, 2));
+        console.log('📋 Primary API response data:', JSON.stringify(responseData, null, 2));
         
         // Handle both array response and paginated response with results
         const ticketsArray = Array.isArray(responseData) ? responseData : (responseData.results || []);
         
-        console.log('🎯 === TICKETS ARRAY ANALYSIS ===');
-        console.log('🎯 Tickets array length:', ticketsArray.length);
-        console.log('🎯 First 3 tickets:', ticketsArray.slice(0, 3));
+        console.log('🎯 Primary tickets array length:', ticketsArray.length);
         
         if (ticketsArray.length > 0) {
-          console.log('🏪 === STORE ANALYSIS FOR TICKETS ===');
-          ticketsArray.forEach((ticket, index) => {
-            console.log(`🎫 Ticket ${index + 1}:`, {
-              id: ticket.id,
-              task: ticket.task,
-              store_id: ticket.store?.id,
-              store_name: ticket.store?.name,
-              status: ticket.status,
-              created_at: ticket.created_at
-            });
-          });
-        }
-        
-        // Transform tickets to ensure consistent format matching API structure
-        const transformedTickets = ticketsArray.map((ticket: any) => ({
-          id: ticket.id,
-          task: ticket.task,
-          description: ticket.description,
-          status: ticket.status,
-          category: ticket.category,
-          expected_due_date: ticket.expected_due_date,
-          created_at: ticket.created_at,
-          updated_at: ticket.updated_at,
-          store: ticket.store,
-          assigned_to: ticket.assigned_to,
-          total_time_spent: ticket.total_time_spent || 0,
-        }));
+          // We got tickets from primary endpoint
+          console.log('✅ PRIMARY SUCCESS: Found', ticketsArray.length, 'tickets from main endpoint');
+          
+          const transformedTickets = ticketsArray.map((ticket: any) => ({
+            id: ticket.id,
+            task: ticket.task,
+            description: ticket.description,
+            status: ticket.status,
+            category: ticket.category,
+            expected_due_date: ticket.expected_due_date,
+            created_at: ticket.created_at,
+            updated_at: ticket.updated_at,
+            store: ticket.store,
+            assigned_to: ticket.assigned_to,
+            total_time_spent: ticket.total_time_spent || 0,
+          }));
 
-        console.log('✅ === FINAL TICKETS STATE FOR', user.username, '===');
-        console.log('✅ Total tickets after transformation:', transformedTickets.length);
-        console.log('🏪 Tickets by store:', transformedTickets.reduce((acc, ticket) => {
-          const storeName = ticket.store?.name || 'No Store';
-          acc[storeName] = (acc[storeName] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>));
-        
-        setTickets(transformedTickets);
+          console.log('✅ Setting tickets from PRIMARY endpoint for', user.username, ':', transformedTickets.length);
+          setTickets(transformedTickets);
+          
+        } else {
+          // Primary endpoint returned empty - try alternative approaches
+          console.log('⚠️ PRIMARY EMPTY: Main endpoint returned no tickets, trying store-based fetch...');
+          
+          // Try fetching by user's accessible stores
+          const stores = userStores.length > 0 ? userStores : await fetchUserStores();
+          
+          if (stores.length > 0) {
+            console.log('🏪 SECONDARY: Attempting to fetch tickets by stores:', stores.map(s => s.name));
+            const storeTickets = await fetchAllStoreTickets(stores);
+            
+            if (storeTickets.length > 0) {
+              const transformedTickets = storeTickets.map((ticket: any) => ({
+                id: ticket.id,
+                task: ticket.task,
+                description: ticket.description,
+                status: ticket.status,
+                category: ticket.category,
+                expected_due_date: ticket.expected_due_date,
+                created_at: ticket.created_at,
+                updated_at: ticket.updated_at,
+                store: ticket.store,
+                assigned_to: ticket.assigned_to,
+                total_time_spent: ticket.total_time_spent || 0,
+              }));
+
+              console.log('✅ SECONDARY SUCCESS: Found', transformedTickets.length, 'tickets from store-based fetch');
+              setTickets(transformedTickets);
+            } else {
+              console.log('❌ SECONDARY FAILED: No tickets found even with store-based fetch');
+              setTickets([]);
+            }
+          } else {
+            console.log('❌ No accessible stores found for user:', user.username);
+            setTickets([]);
+          }
+        }
         
       } else {
         console.error('❌ === API ERROR DETAILS FOR', user.username, '===');
@@ -189,7 +244,6 @@ export const useTickets = () => {
           console.log('🔍 404 - No tickets endpoint found or no tickets for user:', user.username);
           setTickets([]);
         } else {
-          // Try to get error details from response
           try {
             const errorData = await response?.text();
             console.error('❌ API Error response body:', errorData);
