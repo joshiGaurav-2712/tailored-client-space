@@ -1,20 +1,28 @@
 
 import React from 'react';
-import { FolderOpen, Ticket, Clock } from 'lucide-react';
+import { FolderOpen, Ticket, Clock, Building } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
 
 export const MetricsCards = () => {
-  const { tickets } = useTickets();
+  const { tickets, userStores } = useTickets();
 
-  console.log('📊 MetricsCards rendering with', tickets.length, 'tickets');
+  console.log('📊 MetricsCards rendering with', tickets.length, 'tickets for', userStores.length, 'stores');
 
   const completedTickets = tickets.filter(t => t.status === 'completed').length;
   const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
   const pendingTickets = tickets.filter(t => t.status === 'pending').length;
 
-  console.log('📈 Metrics breakdown - Total:', tickets.length, 'Completed:', completedTickets, 'In Progress:', inProgressTickets, 'Pending:', pendingTickets);
+  console.log('📈 Store-specific metrics - Total:', tickets.length, 'Completed:', completedTickets, 'In Progress:', inProgressTickets, 'Pending:', pendingTickets);
 
   const metrics = [
+    {
+      title: 'My Stores',
+      value: userStores.length.toString(),
+      icon: Building,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      hoverColor: 'hover:bg-purple-100'
+    },
     {
       title: 'Total Tickets',
       value: tickets.length.toString(),
@@ -42,11 +50,11 @@ export const MetricsCards = () => {
   ];
 
   const handleMetricClick = (metricTitle: string) => {
-    console.log(`Clicked on ${metricTitle}`);
+    console.log(`Clicked on ${metricTitle} for authenticated user`);
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {metrics.map((metric, index) => (
         <div 
           key={`${metric.title}-${metric.value}`}
