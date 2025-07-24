@@ -104,12 +104,12 @@ export const CommunicationCenter = () => {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border p-4 sm:p-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-foreground">Communication Center</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Communication Center</h2>
         <button
           onClick={addUpdate}
-          className="text-primary hover:text-primary/80 text-sm font-medium flex items-center"
+          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Update
@@ -118,26 +118,26 @@ export const CommunicationCenter = () => {
       
       {/* Latest Updates */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-foreground mb-3">Latest Updates</h3>
+        <h3 className="text-sm font-medium text-gray-900 mb-3">Latest Updates</h3>
         <div className="space-y-3 max-h-64 overflow-y-auto">
           {updates.map((update) => (
             <div 
               key={update.id} 
               className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                update.read ? 'bg-muted/50' : 'bg-primary/5 border-l-4 border-primary'
+                update.read ? 'bg-gray-50' : 'bg-blue-50 border-l-4 border-blue-500'
               }`}
               onClick={() => markAsRead(update.id)}
             >
               <div className="flex items-start space-x-2">
                 {getUpdateIcon(update.type)}
                 <div className="flex-1">
-                  <p className={`text-sm ${update.read ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
+                  <p className={`text-sm ${update.read ? 'text-gray-700' : 'text-gray-900 font-medium'}`}>
                     {update.title}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Posted {update.time}</p>
+                  <p className="text-xs text-gray-500 mt-1">Posted {update.time}</p>
                 </div>
                 {!update.read && (
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 )}
               </div>
             </div>
@@ -147,24 +147,24 @@ export const CommunicationCenter = () => {
 
       {/* Message Input */}
       {showMessageInput && (
-        <div className="mb-4 p-3 bg-muted/30 rounded-lg">
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message to support..."
-            className="w-full p-2 border border-input rounded-md text-sm resize-none bg-background"
+            className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none"
             rows={3}
           />
           <div className="flex justify-end space-x-2 mt-2">
             <button
               onClick={() => setShowMessageInput(false)}
-              className="px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
             >
               Cancel
             </button>
             <button
               onClick={sendMessage}
-              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 flex items-center"
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
             >
               <Send className="h-3 w-3 mr-1" />
               Send
@@ -175,20 +175,20 @@ export const CommunicationCenter = () => {
 
       {/* Quick Actions */}
       <div>
-        <h3 className="text-sm font-medium text-foreground mb-3">Quick Actions</h3>
+        <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Actions</h3>
         <div className="space-y-2">
           <button 
             onClick={scheduleeMeeting}
-            className="w-full flex items-center justify-center px-4 py-2 border border-input rounded-md hover:bg-muted/50 text-sm transition-colors"
+            className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm transition-colors"
           >
-            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+            <Calendar className="h-4 w-4 mr-2 text-gray-500" />
             Schedule Meeting
           </button>
           <button 
             onClick={contactSupport}
-            className="w-full flex items-center justify-center px-4 py-2 border border-input rounded-md hover:bg-muted/50 text-sm transition-colors"
+            className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm transition-colors"
           >
-            <MessageSquare className="h-4 w-4 mr-2 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 mr-2 text-gray-500" />
             Contact Support
           </button>
         </div>

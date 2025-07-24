@@ -149,10 +149,10 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
 
   return (
     <>
-      <div className="bg-card/80 backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 animate-fade-in">
+        <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-3">
-            <h2 className="text-lg font-semibold text-foreground">Recent Tickets</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Recent Tickets</h2>
             <Button
               size="sm"
               variant="ghost"
@@ -164,19 +164,19 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-            <div className="relative flex-1 sm:flex-none">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search tickets..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-input rounded-md focus:ring-ring focus:border-ring text-sm w-full sm:w-64 bg-background"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -189,83 +189,23 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
           </div>
         </div>
 
-        {/* Mobile Card View */}
-        <div className="block lg:hidden space-y-4">
-          {filteredTickets.map((ticket) => (
-            <div key={ticket.id} className="bg-card border rounded-lg p-4 hover:shadow-md transition-all">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="font-medium text-foreground">#{ticket.id}</p>
-                  <h3 className="text-sm font-semibold text-foreground mt-1 line-clamp-2">{ticket.task}</h3>
-                </div>
-                <div className="flex space-x-1">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleView(ticket)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Ticket</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this ticket? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(ticket.id)}
-                          className="bg-destructive hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-3">
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
-                  {ticket.category}
-                </span>
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
-                  {formatStatus(ticket.status)}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Due: {ticket.expected_due_date ? new Date(ticket.expected_due_date).toLocaleDateString() : 'N/A'}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop Table View */}
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b">
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">ID</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">TITLE</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">CATEGORY</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">STATUS</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">DUE DATE</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-sm">ACTIONS</th>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ID</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">TITLE</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">CATEGORY</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">STATUS</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">DUE DATE</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {filteredTickets.map((ticket) => (
-                <tr key={ticket.id} className="border-b hover:bg-muted/50 transition-colors">
-                  <td className="py-3 px-4 text-sm text-foreground">#{ticket.id}</td>
-                  <td className="py-3 px-4 text-sm text-foreground max-w-xs truncate">{ticket.task}</td>
+                <tr key={ticket.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-gray-900">#{ticket.id}</td>
+                  <td className="py-3 px-4 text-sm text-gray-900 max-w-xs truncate">{ticket.task}</td>
                   <td className="py-3 px-4">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
                       {ticket.category}
@@ -276,7 +216,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                       {formatStatus(ticket.status)}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-foreground">
+                  <td className="py-3 px-4 text-sm text-gray-900">
                     {ticket.expected_due_date ? new Date(ticket.expected_due_date).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="py-3 px-4">
@@ -292,7 +232,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:text-destructive">
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:text-red-600">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -307,7 +247,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(ticket.id)}
-                              className="bg-destructive hover:bg-destructive/90"
+                              className="bg-red-600 hover:bg-red-700"
                             >
                               Delete
                             </AlertDialogAction>
@@ -320,13 +260,13 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
               ))}
             </tbody>
           </table>
+          
+          {filteredTickets.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              {tickets.length === 0 ? 'No tickets found. Create your first ticket!' : 'No tickets match your search criteria.'}
+            </div>
+          )}
         </div>
-        
-        {filteredTickets.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            {tickets.length === 0 ? 'No tickets found. Create your first ticket!' : 'No tickets match your search criteria.'}
-          </div>
-        )}
       </div>
 
       <ViewTicketModal
