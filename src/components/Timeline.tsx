@@ -105,13 +105,13 @@ export const Timeline = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-card rounded-lg shadow-sm border p-4 sm:p-6">
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Timeline & Milestones</h2>
+          <h2 className="text-lg font-semibold text-foreground">Timeline & Milestones</h2>
           <button
             onClick={addMilestone}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+            className="text-primary hover:text-primary/80 text-sm font-medium flex items-center"
           >
             <Calendar className="h-4 w-4 mr-1" />
             Add Milestone
@@ -124,8 +124,8 @@ export const Timeline = () => {
               onClick={() => handleFilterChange(option.value)}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${
                 activeFilter === option.value
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               {option.label}
@@ -148,7 +148,7 @@ export const Timeline = () => {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <h3 
-                  className="font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                  className="font-medium text-foreground cursor-pointer hover:text-primary"
                   onClick={() => handleMilestoneClick(milestone.id)}
                 >
                   {milestone.title}
@@ -157,24 +157,24 @@ export const Timeline = () => {
                   {milestone.status}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
+              <p className="text-sm text-muted-foreground mt-1">{milestone.description}</p>
               {milestone.date && (
-                <p className="text-xs text-gray-500 mt-2 flex items-center">
+                <p className="text-xs text-muted-foreground mt-2 flex items-center">
                   <Calendar className="h-3 w-3 mr-1" />
                   {milestone.date}
                 </p>
               )}
               
               {selectedMilestone === milestone.id && (
-                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                <div className="mt-3 p-3 bg-primary/5 rounded-lg">
+                  <p className="text-sm text-primary">
                     Additional details and actions for this milestone would appear here.
                   </p>
                   <div className="mt-2 flex space-x-2">
-                    <button className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
+                    <button className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
                       Edit
                     </button>
-                    <button className="text-xs bg-gray-600 text-white px-2 py-1 rounded">
+                    <button className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
                       Mark Complete
                     </button>
                   </div>

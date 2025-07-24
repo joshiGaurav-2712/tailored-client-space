@@ -86,12 +86,12 @@ export const ProjectHealth = () => {
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6 hover:shadow-xl transition-all duration-300">
+    <div className="bg-card/80 backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 hover:shadow-xl transition-all duration-300">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Project Health</h2>
+        <h2 className="text-lg font-semibold text-foreground">Project Health</h2>
         <button 
           onClick={() => console.log('View all tickets')}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200 hover:scale-105 transform"
+          className="text-primary hover:text-primary/80 text-sm font-medium transition-colors duration-200 hover:scale-105 transform"
         >
           View All
         </button>
