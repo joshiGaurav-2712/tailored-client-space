@@ -196,7 +196,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ID</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">TITLE</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">CATEGORY</th>
+{/*                 <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">CATEGORY</th> */}
                 <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">STATUS</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">DUE DATE</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm">ACTIONS</th>
@@ -207,11 +207,11 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                 <tr key={ticket.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-4 text-sm text-gray-900">#{ticket.id}</td>
                   <td className="py-3 px-4 text-sm text-gray-900 max-w-xs truncate">{ticket.task}</td>
-                  <td className="py-3 px-4">
+{/*                   <td className="py-3 px-4">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
                       {ticket.category}
                     </span>
-                  </td>
+                  </td> */}
                   <td className="py-3 px-4">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
                       {formatStatus(ticket.status)}
@@ -271,9 +271,9 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-gray-900 truncate">#{ticket.id} - {ticket.task}</h3>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
+{/*                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
                       {ticket.category}
-                    </span>
+                    </span> */}
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
                       {formatStatus(ticket.status)}
                     </span>
