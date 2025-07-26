@@ -104,12 +104,12 @@ export const CommunicationCenter = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Communication Center</h2>
         <button
           onClick={addUpdate}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center justify-center sm:justify-start py-2 sm:py-0"
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Update
@@ -179,14 +179,14 @@ export const CommunicationCenter = () => {
         <div className="space-y-2">
           <button 
             onClick={scheduleeMeeting}
-            className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm transition-colors"
+            className="w-full flex items-center justify-center px-4 py-3 sm:py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm transition-colors touch-manipulation"
           >
             <Calendar className="h-4 w-4 mr-2 text-gray-500" />
             Schedule Meeting
           </button>
           <button 
             onClick={contactSupport}
-            className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm transition-colors"
+            className="w-full flex items-center justify-center px-4 py-3 sm:py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm transition-colors touch-manipulation"
           >
             <MessageSquare className="h-4 w-4 mr-2 text-gray-500" />
             Contact Support

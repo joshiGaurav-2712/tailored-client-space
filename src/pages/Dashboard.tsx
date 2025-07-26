@@ -41,15 +41,15 @@ const Dashboard = () => {
 
       <DashboardHeader />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 relative z-10">
         {/* Page Header */}
-        <div className="mb-8 animate-fade-in">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Welcome to Troopod Dashboard</h1>
-              <p className="text-gray-600 mt-1">Overview of your projects and tickets</p>
+        <div className="mb-6 sm:mb-8 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome to Troopod Dashboard</h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">Overview of your projects and tickets</p>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs sm:text-sm text-gray-500 self-start sm:self-auto">
               Last updated: {new Date().toLocaleDateString()} - {new Date().toLocaleTimeString()}
             </div>
           </div>
@@ -61,27 +61,41 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-          {/* Left Column - Recent Tickets (Full Width) */}
-          <div className="lg:col-span-3">
-            <div className="animate-fade-in delay-400">
-              <RecentTickets ref={recentTicketsRef} />
+        <div className="space-y-6 sm:space-y-8 mt-6 sm:mt-8">
+          {/* Recent Tickets - Full Width */}
+          <div className="animate-fade-in delay-400">
+            <RecentTickets ref={recentTicketsRef} />
+          </div>
+
+          {/* Two Column Layout for Desktop, Stacked for Mobile */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+              <div className="animate-fade-in delay-300">
+                <ProjectHealth />
+              </div>
+            </div>
+
+            <div className="space-y-6 sm:space-y-8">
+              <div className="animate-fade-in delay-500">
+                <Timeline />
+              </div>
+              <div className="animate-fade-in delay-600">
+                <CommunicationCenter />
+              </div>
             </div>
           </div>
 
-          {/* Additional components can be added here */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="animate-fade-in delay-300">
-              <ProjectHealth />
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <div className="animate-fade-in delay-500">
-              <Timeline />
-            </div>
-            <div className="animate-fade-in delay-600">
-              <CommunicationCenter />
+          {/* Schedule Meeting Button */}
+          <div className="pt-6 sm:pt-8 border-t border-gray-200 animate-fade-in delay-700">
+            <div className="flex justify-center">
+              <a
+                href="https://calendar.google.com/calendar/u/0/r/eventedit?text=Meeting+Title&details=Meeting+Description&location=Online&dates=20250610T083000Z/20250610T093000Z"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 sm:px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 text-center"
+              >
+                📅 Schedule Meeting
+              </a>
             </div>
           </div>
         </div>

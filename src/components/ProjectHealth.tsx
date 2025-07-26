@@ -106,13 +106,13 @@ export const ProjectHealth = () => {
           return (
             <div 
               key={`${ticket.id}-${ticket.updated_at}`}
-              className="border border-gray-200/50 rounded-lg p-4 hover:border-gray-300 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-md"
+              className="border border-gray-200/50 rounded-lg p-3 sm:p-4 hover:border-gray-300 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-md"
             >
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2 flex-1">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
                     <h3 
-                      className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors duration-200 truncate max-w-xs"
+                      className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors duration-200 truncate text-sm sm:text-base"
                       onClick={() => handleTicketClick(ticket.id)}
                       title={ticket.task}
                     >
@@ -122,13 +122,13 @@ export const ProjectHealth = () => {
                       {getStatusIcon(ticket.status)}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`text-sm font-medium ${statusInfo.color} transition-colors duration-200`}>
+                  <div className="flex items-center justify-between sm:justify-end space-x-2">
+                    <span className={`text-xs sm:text-sm font-medium ${statusInfo.color} transition-colors duration-200`}>
                       {statusInfo.status}
                     </span>
                     <button
                       onClick={() => toggleProject(ticketId)}
-                      className="text-gray-400 hover:text-gray-600 transition-all duration-200 hover:scale-110"
+                      className="text-gray-400 hover:text-gray-600 transition-all duration-200 hover:scale-110 p-1"
                     >
                       {expandedProject === ticketId ? 
                         <ChevronUp className="h-4 w-4" /> : 
@@ -145,12 +145,12 @@ export const ProjectHealth = () => {
                       className="h-2"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900 min-w-[3rem]">{progress}%</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-900 min-w-[3rem]">{progress}%</span>
                 </div>
                 
-                <div className="flex justify-between items-center text-sm text-gray-500">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-xs sm:text-sm text-gray-500">
                   <span>Due: {formatDueDate(ticket.expected_due_date)}</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
+                  <span className={`px-2 py-1 rounded-full text-xs self-start sm:self-auto ${
                     ticket.category === 'bug' ? 'bg-red-100 text-red-800' :
                     ticket.category === 'feature' ? 'bg-purple-100 text-purple-800' :
                     ticket.category === 'enhancement' ? 'bg-blue-100 text-blue-800' :
@@ -164,7 +164,7 @@ export const ProjectHealth = () => {
                 {expandedProject === ticketId && (
                   <div className="mt-4 pt-4 border-t border-gray-100 animate-fade-in">
                     <p className="text-sm text-gray-600 mb-3">{ticket.description || 'No description provided'}</p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="font-medium text-gray-700">Created:</p>
                         <p className="text-gray-600">{new Date(ticket.created_at).toLocaleDateString()}</p>

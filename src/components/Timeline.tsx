@@ -105,24 +105,24 @@ export const Timeline = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Timeline & Milestones</h2>
           <button
             onClick={addMilestone}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center justify-center sm:justify-start py-2 sm:py-0"
           >
             <Calendar className="h-4 w-4 mr-1" />
             Add Milestone
           </button>
         </div>
-        <div className="flex space-x-4">
+        <div className="flex flex-wrap gap-2 sm:gap-4">
           {filterOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => handleFilterChange(option.value)}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              className={`px-3 py-1 text-sm rounded-md transition-colors flex-1 sm:flex-initial ${
                 activeFilter === option.value
                   ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
@@ -134,30 +134,30 @@ export const Timeline = () => {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {milestones.map((milestone, index) => (
           <div key={milestone.id} className="flex">
-            <div className="flex-shrink-0 mr-4">
+            <div className="flex-shrink-0 mr-3 sm:mr-4 pt-1">
               <button
                 onClick={() => handleMilestoneClick(milestone.id)}
-                className="hover:scale-110 transition-transform"
+                className="hover:scale-110 transition-transform p-1"
               >
-                <milestone.icon className={`h-6 w-6 ${milestone.iconColor}`} />
+                <milestone.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${milestone.iconColor}`} />
               </button>
             </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <h3 
-                  className="font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                  className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 text-sm sm:text-base truncate"
                   onClick={() => handleMilestoneClick(milestone.id)}
                 >
                   {milestone.title}
                 </h3>
-                <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(milestone.status)}`}>
+                <span className={`text-xs px-2 py-1 rounded-full self-start sm:self-auto ${getStatusBadgeClass(milestone.status)}`}>
                   {milestone.status}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">{milestone.description}</p>
               {milestone.date && (
                 <p className="text-xs text-gray-500 mt-2 flex items-center">
                   <Calendar className="h-3 w-3 mr-1" />
@@ -170,7 +170,7 @@ export const Timeline = () => {
                   <p className="text-sm text-blue-800">
                     Additional details and actions for this milestone would appear here.
                   </p>
-                  <div className="mt-2 flex space-x-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <button className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
                       Edit
                     </button>

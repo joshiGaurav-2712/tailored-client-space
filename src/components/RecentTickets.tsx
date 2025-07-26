@@ -164,19 +164,19 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search tickets..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -189,7 +189,8 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -260,13 +261,72 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
               ))}
             </tbody>
           </table>
-          
-          {filteredTickets.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              {tickets.length === 0 ? 'No tickets found. Create your first ticket!' : 'No tickets match your search criteria.'}
-            </div>
-          )}
         </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {filteredTickets.map((ticket) => (
+            <div key={ticket.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-gray-900 truncate">#{ticket.id} - {ticket.task}</h3>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(ticket.category)}`}>
+                      {ticket.category}
+                    </span>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                      {formatStatus(ticket.status)}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 ml-2">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-9 w-9 p-0"
+                    onClick={() => handleView(ticket)}
+                    title="View ticket details"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="ghost" className="h-9 w-9 p-0 hover:text-red-600">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Ticket</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this ticket? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(ticket.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+              <div className="text-sm text-gray-600">
+                <p><span className="font-medium">Due:</span> {ticket.expected_due_date ? new Date(ticket.expected_due_date).toLocaleDateString() : 'N/A'}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+          
+        {filteredTickets.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            {tickets.length === 0 ? 'No tickets found. Create your first ticket!' : 'No tickets match your search criteria.'}
+          </div>
+        )}
       </div>
 
       <ViewTicketModal
