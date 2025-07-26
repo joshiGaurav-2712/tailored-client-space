@@ -231,7 +231,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <AlertDialog>
+{/*                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:text-red-600">
                             <Trash2 className="h-4 w-4" />
@@ -254,7 +254,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
-                      </AlertDialog>
+                      </AlertDialog> */}
                     </div>
                   </td>
                 </tr>
@@ -289,7 +289,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <AlertDialog>
+{/*                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button size="sm" variant="ghost" className="h-9 w-9 p-0 hover:text-red-600">
                         <Trash2 className="h-4 w-4" />
@@ -312,7 +312,7 @@ export const RecentTickets = forwardRef<RecentTicketsRef>((props, ref) => {
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
-                  </AlertDialog>
+                  </AlertDialog> */}
                 </div>
               </div>
               <div className="text-sm text-gray-600">
