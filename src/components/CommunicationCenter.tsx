@@ -177,13 +177,15 @@ export const CommunicationCenter = () => {
       <div>
         <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Actions</h3>
         <div className="space-y-2">
-          <button 
-            onClick={scheduleeMeeting}
+          <a 
+            href="https://calendar.google.com/calendar/u/0/r/eventedit?text=Meeting+Title&details=Meeting+Description&location=Online&dates=20250610T083000Z/20250610T093000Z"
+            target="_blank"
+            rel="noopener noreferrer"
             className="w-full flex items-center justify-center px-4 py-3 sm:py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm transition-colors touch-manipulation"
           >
             <Calendar className="h-4 w-4 mr-2 text-gray-500" />
             Schedule Meeting
-          </button>
+          </a>
           <button 
             onClick={contactSupport}
             className="w-full flex items-center justify-center px-4 py-3 sm:py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm transition-colors touch-manipulation"

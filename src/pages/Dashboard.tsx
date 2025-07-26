@@ -85,19 +85,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Schedule Meeting Button */}
-          <div className="pt-6 sm:pt-8 border-t border-gray-200 animate-fade-in delay-700">
-            <div className="flex justify-center">
-              <a
-                href="https://calendar.google.com/calendar/u/0/r/eventedit?text=Meeting+Title&details=Meeting+Description&location=Online&dates=20250610T083000Z/20250610T093000Z"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 sm:px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 text-center"
-              >
-                📅 Schedule Meeting
-              </a>
-            </div>
-          </div>
         </div>
       </main>
     </div>

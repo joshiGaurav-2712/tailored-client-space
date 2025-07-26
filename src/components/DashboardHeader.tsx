@@ -41,13 +41,14 @@ export const DashboardHeader = () => {
 
             {/* Right side actions */}
             <div className="flex items-center space-x-4">
-              <Button 
+              {/* Create New Ticket button hidden for now */}
+              {/* <Button 
                 className="bg-blue-600 hover:bg-blue-700 transition-colors"
                 onClick={() => setIsCreateModalOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Ticket
-              </Button>
+              </Button> */}
               
               <Button
                 variant="outline"
